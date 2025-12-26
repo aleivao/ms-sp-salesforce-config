@@ -1,0 +1,43 @@
+ASUNTO: Solicitud de permisos AWS - Cuenta 623653227273 (Comercial Desarrollo V2)
+
+---
+
+Hola,
+
+Solicito acceso adicional para poder desplegar el microservicio ms-sp-salesforce-config en la cuenta AWS 623653227273 (Comercial Desarrollo V2).
+
+SITUACIÓN ACTUAL:
+- Tengo acceso al Permission Set: DevComercialV2
+- Este Permission Set no tiene permisos para crear Security Groups, Load Balancers, ni otros recursos necesarios
+
+SOLICITUD:
+Por favor, una de las siguientes opciones:
+
+1. [PREFERIDA] Asignarme acceso al Permission Set "AWSAdministratorAccess" para la cuenta 623653227273
+
+   O
+
+2. Agregar los permisos necesarios al Permission Set "DevComercialV2" (detalle en documento adjunto)
+
+CONTEXTO:
+- Proyecto: Microservicio de integración con Salesforce
+- Repositorio: https://github.com/ajegroup-ayni/ms-sp-salesforce-config
+- Infraestructura: ECS Fargate en VPC existente (vpc-03dabe3cc12259b57)
+- Cluster ECS existente: cluster-microservicios-aini
+
+RECURSOS A CREAR:
+- Application Load Balancer (interno)
+- Security Groups
+- VPC Endpoints (ECR, CloudWatch)
+- ECS Task Definition y Service
+- IAM Roles para ECS y GitHub Actions (CI/CD)
+- Secret en Secrets Manager
+- Log Group en CloudWatch
+
+Adjunto documento con el detalle completo de permisos requeridos y justificación de seguridad.
+
+Quedo atento a cualquier consulta.
+
+Saludos,
+Alvaro Leiva
+alvaro.leiva@ajegroup.com

@@ -71,3 +71,20 @@ variable "existing_ecs_cluster_name" {
   type        = string
   default     = ""
 }
+
+variable "existing_alb_name" {
+  description = "Name of existing ALB to use"
+  type        = string
+}
+
+variable "alb_listener_port" {
+  description = "Port of the existing ALB listener"
+  type        = number
+  default     = 8080
+}
+
+variable "listener_rule_priority" {
+  description = "Priority for the listener rule (must be unique per ALB)"
+  type        = number
+  default     = 100
+}

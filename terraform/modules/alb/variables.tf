@@ -8,7 +8,19 @@ variable "vpc_id" {
   type        = string
 }
 
-variable "subnet_ids" {
-  description = "List of subnet IDs for the ALB (internal subnets)"
-  type        = list(string)
+variable "existing_alb_name" {
+  description = "Name of existing ALB to use"
+  type        = string
+}
+
+variable "listener_port" {
+  description = "Port of the existing listener"
+  type        = number
+  default     = 8080
+}
+
+variable "listener_rule_priority" {
+  description = "Priority for the listener rule (must be unique)"
+  type        = number
+  default     = 100
 }

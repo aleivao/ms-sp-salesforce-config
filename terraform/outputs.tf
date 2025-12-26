@@ -3,19 +3,19 @@ output "vpc_id" {
   value       = module.vpc.vpc_id
 }
 
-output "vpc_cidr" {
-  description = "VPC CIDR block"
-  value       = module.vpc.vpc_cidr
-}
-
 output "ecr_repository_url" {
   description = "ECR repository URL"
   value       = module.ecr.repository_url
 }
 
 output "alb_dns_name" {
-  description = "ALB DNS name (internal)"
+  description = "ALB DNS name (existing)"
   value       = module.alb.alb_dns_name
+}
+
+output "target_group_arn" {
+  description = "Target group ARN"
+  value       = module.alb.target_group_arn
 }
 
 output "ecs_cluster_id" {
@@ -26,4 +26,9 @@ output "ecs_cluster_id" {
 output "ecs_service_name" {
   description = "ECS service name"
   value       = module.ecs.service_name
+}
+
+output "service_endpoint" {
+  description = "Service endpoint (internal)"
+  value       = "http://${module.alb.alb_dns_name}:8080/api/salesforce"
 }

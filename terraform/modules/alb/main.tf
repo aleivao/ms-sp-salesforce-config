@@ -1,13 +1,15 @@
-resource "aws_lb" "main" {
-  name               = "${var.environment}-ms-sf-config-alb"
-  internal           = true  # ALB interno para VPC sin subnets públicas
-  load_balancer_type = "application"
-  security_groups    = [aws_security_group.alb.id]
-  subnets            = var.subnet_ids
-
-  enable_deletion_protection = var.environment == "prod"
+# Data source para ALB existente
+data "aws_lb" "existing" {
+  name = var.existing_alb_name
 }
 
+# Data source para Listener existente
+data "aws_lb_listener" "existing" {
+  load_balancer_arn = data.aws_lb.existing.arn
+  port              = var.listener_port
+}
+
+# Target Group para este servicio
 resource "aws_lb_target_group" "main" {
   name        = "${var.environment}-ms-sf-config-tg"
   port        = 8080
@@ -30,13 +32,19 @@ resource "aws_lb_target_group" "main" {
   deregistration_delay = 30
 }
 
-resource "aws_lb_listener" "main" {
-  load_balancer_arn = aws_lb.main.arn
-  port              = "80"
-  protocol          = "HTTP"
+# Listener Rule para rutear tráfico a este servicio
+resource "aws_lb_listener_rule" "main" {
+  listener_arn = data.aws_lb_listener.existing.arn
+  priority     = var.listener_rule_priority
 
-  default_action {
+  action {
     type             = "forward"
     target_group_arn = aws_lb_target_group.main.arn
+  }
+
+  condition {
+    path_pattern {
+      values = ["/api/salesforce/*", "/actuator/*"]
+    }
   }
 }
