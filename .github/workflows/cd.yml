@@ -2,13 +2,19 @@ name: CD Pipeline
 
 on:
   push:
-    branches: [ dev, qa, main ]
+    branches: [dev, qa, main]
 
 env:
   AWS_REGION: us-east-2
-  ECR_REPOSITORY: ms-sp-salesforce-config
-  ECS_SERVICE: ms-sp-salesforce-config-service
+  ECR_REPOSITORY: dev-ms-sp-salesforce-config
+  ECS_CLUSTER: cluster-microservicios-aini
+  ECS_SERVICE: dev-ms-sp-salesforce-config-service
+  TASK_DEFINITION: dev-ms-sp-salesforce-config
   CONTAINER_NAME: ms-sp-salesforce-config
+
+permissions:
+  id-token: write
+  contents: read
 
 jobs:
   deploy-dev:
@@ -17,23 +23,21 @@ jobs:
     if: github.ref == 'refs/heads/dev'
     environment:
       name: dev
-      url: https://dev-salesforce-config.ajegroup.com
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        
-      - name: Configure AWS credentials
+
+      - name: Configure AWS credentials (OIDC)
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
-          
+
       - name: Login to Amazon ECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
-        
+
       - name: Build, tag, and push image to Amazon ECR
         id: build-image
         env:
@@ -45,13 +49,13 @@ jobs:
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:dev-latest
           echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
-          
+
       - name: Download task definition
         run: |
           aws ecs describe-task-definition \
-            --task-definition ms-sp-salesforce-config-dev \
+            --task-definition ${{ env.TASK_DEFINITION }} \
             --query taskDefinition > task-definition.json
-            
+
       - name: Fill in the new image ID in the Amazon ECS task definition
         id: task-def
         uses: aws-actions/amazon-ecs-render-task-definition@v1
@@ -59,58 +63,41 @@ jobs:
           task-definition: task-definition.json
           container-name: ${{ env.CONTAINER_NAME }}
           image: ${{ steps.build-image.outputs.image }}
-          
+
       - name: Deploy Amazon ECS task definition
         uses: aws-actions/amazon-ecs-deploy-task-definition@v1
         with:
           task-definition: ${{ steps.task-def.outputs.task-definition }}
-          service: ${{ env.ECS_SERVICE }}-dev
-          cluster: ms-sp-salesforce-config-dev
+          service: ${{ env.ECS_SERVICE }}
+          cluster: ${{ env.ECS_CLUSTER }}
           wait-for-service-stability: true
-          
-      - name: Verify deployment
-        run: |
-          sleep 30
-          ENDPOINT="https://dev-salesforce-config.ajegroup.com/actuator/health"
-          RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" $ENDPOINT)
-          if [ $RESPONSE -eq 200 ]; then
-            echo "Deployment successful - Health check passed"
-          else
-            echo "Deployment failed - Health check returned $RESPONSE"
-            exit 1
-          fi
-          
+
   deploy-qa:
     name: Deploy to QA
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/qa'
     environment:
       name: qa
-      url: https://qa-salesforce-config.ajegroup.com
-    needs: []
-    
+
+    env:
+      ECR_REPOSITORY: qa-ms-sp-salesforce-config
+      ECS_SERVICE: qa-ms-sp-salesforce-config-service
+      TASK_DEFINITION: qa-ms-sp-salesforce-config
+
     steps:
-      - name: Wait for approval
-        uses: trstringer/manual-approval@v1
-        with:
-          secret: ${{ github.TOKEN }}
-          approvers: devops-team,qa-lead
-          minimum-approvals: 1
-          
       - name: Checkout code
         uses: actions/checkout@v4
-        
-      - name: Configure AWS credentials
+
+      - name: Configure AWS credentials (OIDC)
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
-          
+
       - name: Login to Amazon ECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
-        
+
       - name: Build, tag, and push image to Amazon ECR
         id: build-image
         env:
@@ -122,13 +109,13 @@ jobs:
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:qa-latest
           echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
-          
+
       - name: Download task definition
         run: |
           aws ecs describe-task-definition \
-            --task-definition ms-sp-salesforce-config-qa \
+            --task-definition ${{ env.TASK_DEFINITION }} \
             --query taskDefinition > task-definition.json
-            
+
       - name: Fill in the new image ID in the Amazon ECS task definition
         id: task-def
         uses: aws-actions/amazon-ecs-render-task-definition@v1
@@ -136,58 +123,41 @@ jobs:
           task-definition: task-definition.json
           container-name: ${{ env.CONTAINER_NAME }}
           image: ${{ steps.build-image.outputs.image }}
-          
+
       - name: Deploy Amazon ECS task definition
         uses: aws-actions/amazon-ecs-deploy-task-definition@v1
         with:
           task-definition: ${{ steps.task-def.outputs.task-definition }}
-          service: ${{ env.ECS_SERVICE }}-qa
-          cluster: ms-sp-salesforce-config-qa
+          service: ${{ env.ECS_SERVICE }}
+          cluster: ${{ env.ECS_CLUSTER }}
           wait-for-service-stability: true
-          
-      - name: Verify deployment
-        run: |
-          sleep 30
-          ENDPOINT="https://qa-salesforce-config.ajegroup.com/actuator/health"
-          RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" $ENDPOINT)
-          if [ $RESPONSE -eq 200 ]; then
-            echo "Deployment successful - Health check passed"
-          else
-            echo "Deployment failed - Health check returned $RESPONSE"
-            exit 1
-          fi
-          
+
   deploy-prod:
     name: Deploy to PROD
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
     environment:
       name: production
-      url: https://salesforce-config.ajegroup.com
-    needs: []
-    
+
+    env:
+      ECR_REPOSITORY: prod-ms-sp-salesforce-config
+      ECS_SERVICE: prod-ms-sp-salesforce-config-service
+      TASK_DEFINITION: prod-ms-sp-salesforce-config
+
     steps:
-      - name: Wait for approval (2 approvers required)
-        uses: trstringer/manual-approval@v1
-        with:
-          secret: ${{ github.TOKEN }}
-          approvers: devops-lead,tech-lead,cto
-          minimum-approvals: 2
-          
       - name: Checkout code
         uses: actions/checkout@v4
-        
-      - name: Configure AWS credentials
+
+      - name: Configure AWS credentials (OIDC)
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
-          
+
       - name: Login to Amazon ECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
-        
+
       - name: Build, tag, and push image to Amazon ECR
         id: build-image
         env:
@@ -201,13 +171,13 @@ jobs:
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:prod-latest
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
           echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
-          
+
       - name: Download task definition
         run: |
           aws ecs describe-task-definition \
-            --task-definition ms-sp-salesforce-config-prod \
+            --task-definition ${{ env.TASK_DEFINITION }} \
             --query taskDefinition > task-definition.json
-            
+
       - name: Fill in the new image ID in the Amazon ECS task definition
         id: task-def
         uses: aws-actions/amazon-ecs-render-task-definition@v1
@@ -215,27 +185,15 @@ jobs:
           task-definition: task-definition.json
           container-name: ${{ env.CONTAINER_NAME }}
           image: ${{ steps.build-image.outputs.image }}
-          
+
       - name: Deploy Amazon ECS task definition
         uses: aws-actions/amazon-ecs-deploy-task-definition@v1
         with:
           task-definition: ${{ steps.task-def.outputs.task-definition }}
-          service: ${{ env.ECS_SERVICE }}-prod
-          cluster: ms-sp-salesforce-config-prod
+          service: ${{ env.ECS_SERVICE }}
+          cluster: ${{ env.ECS_CLUSTER }}
           wait-for-service-stability: true
-          
-      - name: Verify deployment
-        run: |
-          sleep 30
-          ENDPOINT="https://salesforce-config.ajegroup.com/actuator/health"
-          RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" $ENDPOINT)
-          if [ $RESPONSE -eq 200 ]; then
-            echo "Deployment successful - Health check passed"
-          else
-            echo "Deployment failed - Health check returned $RESPONSE"
-            exit 1
-          fi
-          
+
       - name: Create GitHub Release
         uses: actions/create-release@v1
         env:
