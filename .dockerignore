@@ -1,0 +1,15 @@
+.git
+.gitignore
+README.md
+.gradle
+build
+.idea
+*.iml
+*.log
+.env
+docker-compose.yml
+Dockerfile
+.dockerignore
+terraform/
+.github/
+*.md

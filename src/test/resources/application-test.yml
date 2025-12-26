@@ -1,0 +1,12 @@
+salesforce:
+  login-url: https://test.salesforce.com
+  username: test@test.com
+  password: testpassword
+  client-id: test-client-id
+  client-secret: test-client-secret
+  timeout: 5
+
+logging:
+  level:
+    root: INFO
+    com.aje.salesforce: DEBUG

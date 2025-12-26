@@ -1,0 +1,23 @@
+server:
+  port: 8080
+
+logging:
+  level:
+    root: WARN
+    com.aje.salesforce: INFO
+    org.springframework.web: WARN
+  pattern:
+    console: '{"timestamp":"%d{yyyy-MM-dd HH:mm:ss.SSS}","level":"%level","thread":"%thread","logger":"%logger{36}","message":"%msg","exception":"%ex{full}"}%n'
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: never
+
+salesforce:
+  login-url: https://ajegroup.my.salesforce.com
+  timeout: 30
