@@ -42,7 +42,20 @@
       "Bash(AWS_PROFILE=personal terraform validate:*)",
       "Bash(AWS_PROFILE=personal terraform plan:*)",
       "Bash(AWS_PROFILE=personal terraform apply:*)",
-      "Bash(AWS_PROFILE=personal terraform output:*)"
+      "Bash(AWS_PROFILE=personal terraform output:*)",
+      "Bash(docker build:*)",
+      "Bash(docker info:*)",
+      "Bash(DOCKER_BUILDKIT=0 docker build:*)",
+      "Bash(aws ecr get-login-password:*)",
+      "Bash(docker login:*)",
+      "Bash(docker tag:*)",
+      "Bash(docker push:*)",
+      "Bash(aws ecs update-service:*)",
+      "Bash(aws ecs describe-services:*)",
+      "Bash(aws iam put-role-policy:*)",
+      "Bash(AWS_PROFILE=personal aws ecs:*)",
+      "Bash(AWS_PROFILE=personal aws secretsmanager:*)",
+      "Bash(git check-ignore:*)"
     ]
   }
 }

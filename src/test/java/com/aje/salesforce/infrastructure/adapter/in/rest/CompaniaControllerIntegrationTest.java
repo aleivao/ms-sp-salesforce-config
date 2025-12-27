@@ -6,6 +6,8 @@ import com.aje.salesforce.domain.exception.CompaniaNotFoundException;
 import com.aje.salesforce.domain.model.Compania;
 import com.aje.salesforce.infrastructure.adapter.in.rest.dto.CompaniaDto;
 import com.aje.salesforce.infrastructure.adapter.in.rest.mapper.CompaniaDtoMapper;
+import com.aje.salesforce.infrastructure.config.ApiKeyProperties;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,19 +32,30 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @ActiveProfiles("test")
 @DisplayName("CompaniaController Integration Tests")
 class CompaniaControllerIntegrationTest {
-    
+
+    private static final String API_KEY = "test-api-key";
+
     @Autowired
     private MockMvc mockMvc;
-    
+
     @MockBean
     private GetCompaniasByPaisUseCase getCompaniasByPaisUseCase;
-    
+
     @MockBean
     private GetCompaniaByIdUseCase getCompaniaByIdUseCase;
-    
+
     @MockBean
     private CompaniaDtoMapper mapper;
-    
+
+    @MockBean
+    private ApiKeyProperties apiKeyProperties;
+
+    @BeforeEach
+    void setUp() {
+        when(apiKeyProperties.getHeaderName()).thenReturn("X-API-Key");
+        when(apiKeyProperties.getValue()).thenReturn(API_KEY);
+    }
+
     @Test
     @DisplayName("GET /api/v1/companias should return companies for valid country")
     void shouldReturnCompaniesForValidCountry() throws Exception {
@@ -60,24 +73,26 @@ class CompaniaControllerIntegrationTest {
         when(mapper.toDtoList(anyList())).thenReturn(Collections.emptyList());
         
         mockMvc.perform(get("/api/v1/companias")
+                .header("X-API-Key", API_KEY)
                 .param("pais", "Peru")
                 .contentType(MediaType.APPLICATION_JSON))
             .andExpect(status().isOk())
             .andExpect(content().contentType(MediaType.APPLICATION_JSON));
     }
-    
+
     @Test
     @DisplayName("GET /api/v1/companias should return empty list when no companies found")
     void shouldReturnEmptyListWhenNoCompaniesFound() throws Exception {
         when(getCompaniasByPaisUseCase.getByPais(anyString())).thenReturn(Collections.emptyList());
         when(mapper.toDtoList(anyList())).thenReturn(Collections.emptyList());
-        
+
         mockMvc.perform(get("/api/v1/companias")
+                .header("X-API-Key", API_KEY)
                 .param("pais", "UnknownCountry")
                 .contentType(MediaType.APPLICATION_JSON))
             .andExpect(status().isOk());
     }
-    
+
     @Test
     @DisplayName("GET /api/v1/companias/{id} should return company when found")
     void shouldReturnCompanyWhenFound() throws Exception {
@@ -87,26 +102,28 @@ class CompaniaControllerIntegrationTest {
             .codigo("PE001")
             .pais("Peru")
             .build();
-        
+
         CompaniaDto dto = new CompaniaDto();
         dto.setId("a0X5f000000AbCdEFG");
         dto.setName("AJE PERU");
-        
+
         when(getCompaniaByIdUseCase.getById("a0X5f000000AbCdEFG")).thenReturn(compania);
         when(mapper.toDto(compania)).thenReturn(dto);
-        
+
         mockMvc.perform(get("/api/v1/companias/a0X5f000000AbCdEFG")
+                .header("X-API-Key", API_KEY)
                 .contentType(MediaType.APPLICATION_JSON))
             .andExpect(status().isOk());
     }
-    
+
     @Test
     @DisplayName("GET /api/v1/companias/{id} should return 404 when company not found")
     void shouldReturn404WhenCompanyNotFound() throws Exception {
         when(getCompaniaByIdUseCase.getById(anyString()))
             .thenThrow(new CompaniaNotFoundException("notfound"));
-        
+
         mockMvc.perform(get("/api/v1/companias/notfound")
+                .header("X-API-Key", API_KEY)
                 .contentType(MediaType.APPLICATION_JSON))
             .andExpect(status().isNotFound());
     }
