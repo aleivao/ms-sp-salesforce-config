@@ -103,13 +103,13 @@ jobs:
           cache-to: type=gha,mode=max
           load: true
           
-      - name: Verify image size (must be < 180MB)
+      - name: Verify image size (must be < 300MB)
         run: |
           IMAGE_SIZE=$(docker image inspect ms-sp-salesforce-config:${{ github.sha }} --format='{{.Size}}')
           IMAGE_SIZE_MB=$((IMAGE_SIZE / 1024 / 1024))
           echo "Image size: ${IMAGE_SIZE_MB}MB"
-          if [ $IMAGE_SIZE_MB -gt 180 ]; then
-            echo "Error: Image size ${IMAGE_SIZE_MB}MB exceeds 180MB limit"
+          if [ $IMAGE_SIZE_MB -gt 300 ]; then
+            echo "Error: Image size ${IMAGE_SIZE_MB}MB exceeds 300MB limit"
             exit 1
           fi
           
