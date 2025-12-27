@@ -39,15 +39,13 @@ module "ecr" {
   repository_name = var.repository_name
 }
 
-# Módulo ALB: usa ALB existente, crea target group y listener rule
+# Módulo ALB: crea ALB, target group y listener
 module "alb" {
   source = "./modules/alb"
 
-  environment            = var.environment
-  vpc_id                 = module.vpc.vpc_id
-  existing_alb_name      = var.existing_alb_name
-  listener_port          = var.alb_listener_port
-  listener_rule_priority = var.listener_rule_priority
+  environment = var.environment
+  vpc_id      = module.vpc.vpc_id
+  subnet_ids  = var.app_subnet_ids
 }
 
 # Módulo ECS: task definition y service
@@ -55,6 +53,7 @@ module "ecs" {
   source = "./modules/ecs"
 
   environment            = var.environment
+  aws_region             = var.aws_region
   vpc_id                 = module.vpc.vpc_id
   private_subnet_ids     = var.app_subnet_ids
   ecr_repository_url     = module.ecr.repository_url
@@ -65,7 +64,7 @@ module "ecs" {
   alb_target_group_arn   = module.alb.target_group_arn
   alb_security_group_id  = module.alb.alb_security_group_id
 
-  # Usar cluster ECS existente
-  use_existing_cluster  = var.use_existing_ecs_cluster
-  existing_cluster_name = var.existing_ecs_cluster_name
+  # Crear nuevo cluster ECS
+  use_existing_cluster  = false
+  existing_cluster_name = ""
 }

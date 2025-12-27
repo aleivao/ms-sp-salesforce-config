@@ -31,7 +31,18 @@
       "Bash(git remote set-url:*)",
       "Bash(git push:*)",
       "Bash(git rm:*)",
-      "Bash(git checkout:*)"
+      "Bash(git checkout:*)",
+      "Bash(AWS_PROFILE=comercial-dev terraform apply:*)",
+      "Bash(AWS_PROFILE=comercial-dev aws iam:*)",
+      "Bash(AWS_PROFILE=comercial-dev aws elbv2 describe-load-balancers:*)",
+      "Bash(AWS_PROFILE=comercial-dev aws elbv2:*)",
+      "Bash(AWS_PROFILE=comercial-dev aws ec2:*)",
+      "Bash(AWS_PROFILE=comercial-dev terraform destroy:*)",
+      "Bash(git remote:*)",
+      "Bash(AWS_PROFILE=personal terraform validate:*)",
+      "Bash(AWS_PROFILE=personal terraform plan:*)",
+      "Bash(AWS_PROFILE=personal terraform apply:*)",
+      "Bash(AWS_PROFILE=personal terraform output:*)"
     ]
   }
 }

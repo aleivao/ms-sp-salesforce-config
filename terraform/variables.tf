@@ -1,7 +1,7 @@
 variable "aws_region" {
   description = "AWS region"
   type        = string
-  default     = "us-east-2"
+  default     = "us-east-1"
 }
 
 variable "environment" {
@@ -15,7 +15,7 @@ variable "vpc_id" {
 }
 
 variable "app_subnet_ids" {
-  description = "List of existing app subnet IDs for ECS tasks"
+  description = "List of subnet IDs for ECS tasks and ALB"
   type        = list(string)
 }
 
@@ -46,7 +46,7 @@ variable "container_memory" {
 variable "desired_count" {
   description = "Desired number of tasks"
   type        = number
-  default     = 2
+  default     = 1
 }
 
 variable "salesforce_credentials" {
@@ -58,33 +58,4 @@ variable "salesforce_credentials" {
     client_secret = string
   })
   sensitive = true
-}
-
-variable "use_existing_ecs_cluster" {
-  description = "Whether to use an existing ECS cluster"
-  type        = bool
-  default     = false
-}
-
-variable "existing_ecs_cluster_name" {
-  description = "Name of existing ECS cluster (if use_existing_ecs_cluster is true)"
-  type        = string
-  default     = ""
-}
-
-variable "existing_alb_name" {
-  description = "Name of existing ALB to use"
-  type        = string
-}
-
-variable "alb_listener_port" {
-  description = "Port of the existing ALB listener"
-  type        = number
-  default     = 8080
-}
-
-variable "listener_rule_priority" {
-  description = "Priority for the listener rule (must be unique per ALB)"
-  type        = number
-  default     = 100
 }

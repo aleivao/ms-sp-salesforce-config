@@ -1,3 +1,9 @@
+# Git
+.gitignore
+
+# Claude Code
+.claude/
+
 # Gradle
 .gradle/
 build/
@@ -38,7 +44,21 @@ terraform/.terraform/
 *.tfstate
 *.tfstate.backup
 *.tfvars.backup
+*.tfvars.secret
 .terraform.lock.hcl
 
 # Docker
 docker-compose.override.yml
+
+# Temporary scripts
+create_*.sh
+generate_*.sh
+
+# Temporary documentation
+ESTRUCTURA_PROYECTO.md
+FILES_LIST.txt
+INICIO_RAPIDO.md
+PROJECT_SUMMARY.md
+RESUMEN_EJECUTIVO.md
+TERRAFORM_INSTRUCTIONS.md
+TREE_STRUCTURE.txt

@@ -52,7 +52,7 @@ resource "aws_ecs_task_definition" "main" {
       logDriver = "awslogs"
       options = {
         "awslogs-group"         = aws_cloudwatch_log_group.main.name
-        "awslogs-region"        = "us-east-2"
+        "awslogs-region"        = var.aws_region
         "awslogs-stream-prefix" = "ecs"
       }
     }
@@ -77,7 +77,7 @@ resource "aws_ecs_service" "main" {
   network_configuration {
     subnets          = var.private_subnet_ids
     security_groups  = [aws_security_group.ecs_tasks.id]
-    assign_public_ip = false
+    assign_public_ip = true
   }
 
   load_balancer {

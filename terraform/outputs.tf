@@ -9,7 +9,7 @@ output "ecr_repository_url" {
 }
 
 output "alb_dns_name" {
-  description = "ALB DNS name (existing)"
+  description = "ALB DNS name"
   value       = module.alb.alb_dns_name
 }
 
@@ -29,6 +29,6 @@ output "ecs_service_name" {
 }
 
 output "service_endpoint" {
-  description = "Service endpoint (internal)"
-  value       = "http://${module.alb.alb_dns_name}:8080/api/salesforce"
+  description = "Service endpoint"
+  value       = "http://${module.alb.alb_dns_name}/api/salesforce"
 }

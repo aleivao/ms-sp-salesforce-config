@@ -1,15 +1,43 @@
-# Data source para ALB existente
-data "aws_lb" "existing" {
-  name = var.existing_alb_name
+# Security Group para ALB
+resource "aws_security_group" "alb" {
+  name        = "${var.environment}-ms-sf-config-alb-sg"
+  description = "Security group for ALB"
+  vpc_id      = var.vpc_id
+
+  ingress {
+    description = "HTTP"
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name = "${var.environment}-ms-sf-config-alb-sg"
+  }
 }
 
-# Data source para Listener existente
-data "aws_lb_listener" "existing" {
-  load_balancer_arn = data.aws_lb.existing.arn
-  port              = var.listener_port
+# Application Load Balancer
+resource "aws_lb" "main" {
+  name               = "${var.environment}-ms-sf-config-alb"
+  internal           = false
+  load_balancer_type = "application"
+  security_groups    = [aws_security_group.alb.id]
+  subnets            = var.subnet_ids
+
+  tags = {
+    Name = "${var.environment}-ms-sf-config-alb"
+  }
 }
 
-# Target Group para este servicio
+# Target Group
 resource "aws_lb_target_group" "main" {
   name        = "${var.environment}-ms-sf-config-tg"
   port        = 8080
@@ -30,21 +58,20 @@ resource "aws_lb_target_group" "main" {
   }
 
   deregistration_delay = 30
+
+  tags = {
+    Name = "${var.environment}-ms-sf-config-tg"
+  }
 }
 
-# Listener Rule para rutear tráfico a este servicio
-resource "aws_lb_listener_rule" "main" {
-  listener_arn = data.aws_lb_listener.existing.arn
-  priority     = var.listener_rule_priority
+# Listener
+resource "aws_lb_listener" "main" {
+  load_balancer_arn = aws_lb.main.arn
+  port              = 80
+  protocol          = "HTTP"
 
-  action {
+  default_action {
     type             = "forward"
     target_group_arn = aws_lb_target_group.main.arn
-  }
-
-  condition {
-    path_pattern {
-      values = ["/api/salesforce/*", "/actuator/*"]
-    }
   }
 }
