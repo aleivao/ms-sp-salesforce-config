@@ -5,9 +5,9 @@ on:
     branches: [dev]
 
 env:
-  AWS_REGION: us-east-2
+  AWS_REGION: us-east-1
   ECR_REPOSITORY: dev-ms-sp-salesforce-config
-  ECS_CLUSTER: cluster-microservicios-aini
+  ECS_CLUSTER: dev-ms-sp-salesforce-config
   ECS_SERVICE: dev-ms-sp-salesforce-config-service
   TASK_DEFINITION: dev-ms-sp-salesforce-config
   CONTAINER_NAME: ms-sp-salesforce-config
