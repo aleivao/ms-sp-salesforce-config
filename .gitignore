@@ -1,6 +1,3 @@
-# Git
-.gitignore
-
 # Claude Code
 .claude/
 
@@ -16,7 +13,7 @@ build/
 *.iws
 *.iml
 *.ipr
-out/
+/out/
 .vscode/
 *.swp
 *.swo

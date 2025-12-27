@@ -40,7 +40,8 @@ resource "aws_ecs_task_definition" "main" {
       { name = "SALESFORCE_USERNAME", valueFrom = "${aws_secretsmanager_secret.salesforce.arn}:username::" },
       { name = "SALESFORCE_PASSWORD", valueFrom = "${aws_secretsmanager_secret.salesforce.arn}:password::" },
       { name = "SALESFORCE_CLIENT_ID", valueFrom = "${aws_secretsmanager_secret.salesforce.arn}:client_id::" },
-      { name = "SALESFORCE_CLIENT_SECRET", valueFrom = "${aws_secretsmanager_secret.salesforce.arn}:client_secret::" }
+      { name = "SALESFORCE_CLIENT_SECRET", valueFrom = "${aws_secretsmanager_secret.salesforce.arn}:client_secret::" },
+      { name = "API_KEY", valueFrom = "${aws_secretsmanager_secret.salesforce.arn}:api_key::" }
     ]
 
     portMappings = [{

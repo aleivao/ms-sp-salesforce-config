@@ -56,6 +56,7 @@ variable "salesforce_credentials" {
     password      = string
     client_id     = string
     client_secret = string
+    api_key       = string
   })
   sensitive = true
 }
