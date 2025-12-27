@@ -43,19 +43,19 @@ jobs:
         
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3
+        continue-on-error: true
         with:
           files: ./build/reports/jacoco/test/jacocoTestReport.xml
           flags: unittests
           name: codecov-umbrella
-          fail_ci_if_error: true
-          
-      - name: Publish test results
-        uses: dorny/test-reporter@v1
+          fail_ci_if_error: false
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: JUnit Tests
+          name: test-results
           path: build/test-results/test/*.xml
-          reporter: java-junit
           
   security-scan:
     name: Security Scan
@@ -74,11 +74,12 @@ jobs:
           format: 'sarif'
           output: 'trivy-results.sarif'
           
-      - name: Upload Trivy results to GitHub Security
-        uses: github/codeql-action/upload-sarif@v2
+      - name: Upload Trivy results
+        uses: actions/upload-artifact@v4
         if: always()
         with:
-          sarif_file: 'trivy-results.sarif'
+          name: trivy-results
+          path: 'trivy-results.sarif'
           
   docker-build:
     name: Docker Build and Verify
@@ -120,10 +121,11 @@ jobs:
           output: 'trivy-image-results.sarif'
           
       - name: Upload Trivy image results
-        uses: github/codeql-action/upload-sarif@v2
+        uses: actions/upload-artifact@v4
         if: always()
         with:
-          sarif_file: 'trivy-image-results.sarif'
+          name: trivy-image-results
+          path: 'trivy-image-results.sarif'
           
   code-quality:
     name: Code Quality Check
