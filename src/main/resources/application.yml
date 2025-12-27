@@ -72,7 +72,7 @@ springdoc:
     path: /swagger-ui.html
     operations-sorter: method
     tags-sorter: alpha
-  show-actuator: true
+  show-actuator: false
 
 resilience4j:
   circuitbreaker:
