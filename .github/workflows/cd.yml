@@ -2,27 +2,37 @@ name: CD Pipeline
 
 on:
   push:
-    branches: [dev]
+    branches: [dev, qa, main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 env:
   AWS_REGION: us-east-1
-  ECR_REPOSITORY: dev-ms-sp-salesforce-config
-  ECS_CLUSTER: dev-ms-sp-salesforce-config
-  ECS_SERVICE: dev-ms-sp-salesforce-config-service
-  TASK_DEFINITION: dev-ms-sp-salesforce-config
   CONTAINER_NAME: ms-sp-salesforce-config
 
 jobs:
-  deploy-dev:
-    name: Deploy to DEV
+  deploy:
+    name: Deploy to ${{ github.ref_name == 'main' && 'PROD' || upper(github.ref_name) }}
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/dev'
     environment:
-      name: dev
+      name: ${{ github.ref_name == 'main' && 'prod' || github.ref_name }}
+
+    env:
+      ENVIRONMENT: ${{ github.ref_name == 'main' && 'prod' || github.ref_name }}
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Set environment variables
+        run: |
+          echo "ECR_REPOSITORY=${{ env.ENVIRONMENT }}-ms-sp-salesforce-config" >> $GITHUB_ENV
+          echo "ECS_CLUSTER=${{ env.ENVIRONMENT }}-ms-sp-salesforce-config" >> $GITHUB_ENV
+          echo "ECS_SERVICE=${{ env.ENVIRONMENT }}-ms-sp-salesforce-config-service" >> $GITHUB_ENV
+          echo "TASK_DEFINITION=${{ env.ENVIRONMENT }}-ms-sp-salesforce-config" >> $GITHUB_ENV
+          echo "IMAGE_TAG=${{ env.ENVIRONMENT }}-${{ github.sha }}" >> $GITHUB_ENV
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -44,12 +54,11 @@ jobs:
         id: build-image
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          IMAGE_TAG: dev-${{ github.sha }}
         run: |
           docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
-          docker tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:dev-latest
+          docker tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:${{ env.ENVIRONMENT }}-latest
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY:dev-latest
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:${{ env.ENVIRONMENT }}-latest
           echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
 
       - name: Download task definition
