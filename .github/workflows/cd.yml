@@ -14,7 +14,7 @@ env:
 
 jobs:
   deploy:
-    name: Deploy to ${{ github.ref_name == 'main' && 'PROD' || upper(github.ref_name) }}
+    name: Deploy to ${{ github.ref_name }}
     runs-on: ubuntu-latest
     environment:
       name: ${{ github.ref_name == 'main' && 'prod' || github.ref_name }}
