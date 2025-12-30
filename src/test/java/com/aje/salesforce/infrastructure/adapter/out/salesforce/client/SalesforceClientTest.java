@@ -2,6 +2,10 @@ package com.aje.salesforce.infrastructure.adapter.out.salesforce.client;
 
 import com.aje.salesforce.domain.exception.SalesforceIntegrationException;
 import com.aje.salesforce.infrastructure.adapter.out.salesforce.response.CompaniaResponse;
+import com.aje.salesforce.infrastructure.adapter.out.salesforce.response.ConfiguracionImpresionResponse;
+import com.aje.salesforce.infrastructure.adapter.out.salesforce.response.DetallesDocumentoResponse;
+import com.aje.salesforce.infrastructure.adapter.out.salesforce.response.SucursalResponse;
+import com.aje.salesforce.infrastructure.adapter.out.salesforce.response.TipoDocumentoResponse;
 import com.aje.salesforce.infrastructure.config.SalesforceProperties;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -494,5 +498,329 @@ class SalesforceClientTest {
         assertThat(uri).isNotNull();
         assertThat(uri.toString()).contains("/services/data/v59.0/query");
         assertThat(uri.toString()).contains("instance.salesforce.com");
+    }
+
+    @Test
+    @DisplayName("Should query configuracion impresion by pais successfully")
+    void shouldQueryConfiguracionImpresionByPaisSuccessfully() {
+        setupAuth();
+
+        ConfiguracionImpresionResponse configResponse = ConfiguracionImpresionResponse.builder()
+                .id("123")
+                .name("Config Test")
+                .pais("PE")
+                .build();
+
+        ConfiguracionImpresionResponse.QueryResult queryResult = new ConfiguracionImpresionResponse.QueryResult(1, true, List.of(configResponse));
+
+        when(webClient.get()).thenReturn(requestHeadersUriSpec);
+        when(requestHeadersUriSpec.uri(any(java.util.function.Function.class))).thenReturn(requestHeadersSpec);
+        when(requestHeadersSpec.header(anyString(), anyString())).thenReturn(requestHeadersSpec);
+        when(requestHeadersSpec.retrieve()).thenReturn(responseSpec);
+        when(responseSpec.bodyToMono(ConfiguracionImpresionResponse.QueryResult.class)).thenReturn(Mono.just(queryResult));
+
+        List<ConfiguracionImpresionResponse> results = salesforceClient.queryConfiguracionImpresionByPais("PE");
+
+        assertThat(results).isNotNull();
+        assertThat(results).hasSize(1);
+        assertThat(results.get(0).getId()).isEqualTo("123");
+        verify(webClient).get();
+    }
+
+    @Test
+    @DisplayName("Should query configuracion impresion by id successfully")
+    void shouldQueryConfiguracionImpresionByIdSuccessfully() {
+        setupAuth();
+
+        ConfiguracionImpresionResponse configResponse = ConfiguracionImpresionResponse.builder()
+                .id("123")
+                .name("Config Test")
+                .build();
+
+        ConfiguracionImpresionResponse.QueryResult queryResult = new ConfiguracionImpresionResponse.QueryResult(1, true, List.of(configResponse));
+
+        when(webClient.get()).thenReturn(requestHeadersUriSpec);
+        when(requestHeadersUriSpec.uri(any(java.util.function.Function.class))).thenReturn(requestHeadersSpec);
+        when(requestHeadersSpec.header(anyString(), anyString())).thenReturn(requestHeadersSpec);
+        when(requestHeadersSpec.retrieve()).thenReturn(responseSpec);
+        when(responseSpec.bodyToMono(ConfiguracionImpresionResponse.QueryResult.class)).thenReturn(Mono.just(queryResult));
+
+        ConfiguracionImpresionResponse result = salesforceClient.queryConfiguracionImpresionById("123");
+
+        assertThat(result).isNotNull();
+        assertThat(result.getId()).isEqualTo("123");
+        verify(webClient).get();
+    }
+
+    @Test
+    @DisplayName("Should return null when no configuracion impresion found by id")
+    void shouldReturnNullWhenNoConfiguracionImpresionFoundById() {
+        setupAuth();
+
+        ConfiguracionImpresionResponse.QueryResult queryResult = new ConfiguracionImpresionResponse.QueryResult(0, true, Collections.emptyList());
+
+        when(webClient.get()).thenReturn(requestHeadersUriSpec);
+        when(requestHeadersUriSpec.uri(any(java.util.function.Function.class))).thenReturn(requestHeadersSpec);
+        when(requestHeadersSpec.header(anyString(), anyString())).thenReturn(requestHeadersSpec);
+        when(requestHeadersSpec.retrieve()).thenReturn(responseSpec);
+        when(responseSpec.bodyToMono(ConfiguracionImpresionResponse.QueryResult.class)).thenReturn(Mono.just(queryResult));
+
+        ConfiguracionImpresionResponse result = salesforceClient.queryConfiguracionImpresionById("999");
+
+        assertThat(result).isNull();
+    }
+
+    @Test
+    @DisplayName("Should return empty list when no configuraciones impresion found by pais")
+    void shouldReturnEmptyListWhenNoConfiguracionesImpresionFoundByPais() {
+        setupAuth();
+
+        ConfiguracionImpresionResponse.QueryResult queryResult = new ConfiguracionImpresionResponse.QueryResult(0, true, Collections.emptyList());
+
+        when(webClient.get()).thenReturn(requestHeadersUriSpec);
+        when(requestHeadersUriSpec.uri(any(java.util.function.Function.class))).thenReturn(requestHeadersSpec);
+        when(requestHeadersSpec.header(anyString(), anyString())).thenReturn(requestHeadersSpec);
+        when(requestHeadersSpec.retrieve()).thenReturn(responseSpec);
+        when(responseSpec.bodyToMono(ConfiguracionImpresionResponse.QueryResult.class)).thenReturn(Mono.just(queryResult));
+
+        List<ConfiguracionImpresionResponse> results = salesforceClient.queryConfiguracionImpresionByPais("Unknown");
+
+        assertThat(results).isEmpty();
+    }
+
+    @Test
+    @DisplayName("Should throw exception from fallbackQueryConfiguracionImpresionById")
+    void shouldThrowExceptionFromFallbackQueryConfiguracionImpresionById() throws Exception {
+        Method fallbackMethod = SalesforceClient.class.getDeclaredMethod("fallbackQueryConfiguracionImpresionById", String.class, Exception.class);
+        fallbackMethod.setAccessible(true);
+
+        RuntimeException cause = new RuntimeException("Original error");
+
+        try {
+            fallbackMethod.invoke(salesforceClient, "123", cause);
+        } catch (Exception e) {
+            assertThat(e.getCause()).isInstanceOf(SalesforceIntegrationException.class);
+            assertThat(e.getCause().getMessage()).contains("temporarily unavailable");
+        }
+    }
+
+    @Test
+    @DisplayName("Should throw exception from fallbackQueryConfiguracionImpresionByPais")
+    void shouldThrowExceptionFromFallbackQueryConfiguracionImpresionByPais() throws Exception {
+        Method fallbackMethod = SalesforceClient.class.getDeclaredMethod("fallbackQueryConfiguracionImpresionByPais", String.class, Exception.class);
+        fallbackMethod.setAccessible(true);
+
+        RuntimeException cause = new RuntimeException("Original error");
+
+        try {
+            fallbackMethod.invoke(salesforceClient, "PE", cause);
+        } catch (Exception e) {
+            assertThat(e.getCause()).isInstanceOf(SalesforceIntegrationException.class);
+            assertThat(e.getCause().getMessage()).contains("temporarily unavailable");
+        }
+    }
+
+    @Test
+    @DisplayName("Should query tipo documento by pais successfully")
+    void shouldQueryTipoDocumentoByPaisSuccessfully() {
+        setupAuth();
+
+        TipoDocumentoResponse tipoResponse = TipoDocumentoResponse.builder()
+                .id("123")
+                .name("DNI")
+                .pais("PE")
+                .build();
+
+        TipoDocumentoResponse.QueryResult queryResult = new TipoDocumentoResponse.QueryResult(1, true, List.of(tipoResponse));
+
+        when(webClient.get()).thenReturn(requestHeadersUriSpec);
+        when(requestHeadersUriSpec.uri(any(java.util.function.Function.class))).thenReturn(requestHeadersSpec);
+        when(requestHeadersSpec.header(anyString(), anyString())).thenReturn(requestHeadersSpec);
+        when(requestHeadersSpec.retrieve()).thenReturn(responseSpec);
+        when(responseSpec.bodyToMono(TipoDocumentoResponse.QueryResult.class)).thenReturn(Mono.just(queryResult));
+
+        List<TipoDocumentoResponse> results = salesforceClient.queryTipoDocumentoByPais("PE");
+
+        assertThat(results).isNotNull();
+        assertThat(results).hasSize(1);
+        assertThat(results.get(0).getId()).isEqualTo("123");
+        verify(webClient).get();
+    }
+
+    @Test
+    @DisplayName("Should query tipo documento by id successfully")
+    void shouldQueryTipoDocumentoByIdSuccessfully() {
+        setupAuth();
+
+        TipoDocumentoResponse tipoResponse = TipoDocumentoResponse.builder()
+                .id("123")
+                .name("DNI")
+                .build();
+
+        TipoDocumentoResponse.QueryResult queryResult = new TipoDocumentoResponse.QueryResult(1, true, List.of(tipoResponse));
+
+        when(webClient.get()).thenReturn(requestHeadersUriSpec);
+        when(requestHeadersUriSpec.uri(any(java.util.function.Function.class))).thenReturn(requestHeadersSpec);
+        when(requestHeadersSpec.header(anyString(), anyString())).thenReturn(requestHeadersSpec);
+        when(requestHeadersSpec.retrieve()).thenReturn(responseSpec);
+        when(responseSpec.bodyToMono(TipoDocumentoResponse.QueryResult.class)).thenReturn(Mono.just(queryResult));
+
+        TipoDocumentoResponse result = salesforceClient.queryTipoDocumentoById("123");
+
+        assertThat(result).isNotNull();
+        assertThat(result.getId()).isEqualTo("123");
+        verify(webClient).get();
+    }
+
+    @Test
+    @DisplayName("Should return null when no tipo documento found by id")
+    void shouldReturnNullWhenNoTipoDocumentoFoundById() {
+        setupAuth();
+
+        TipoDocumentoResponse.QueryResult queryResult = new TipoDocumentoResponse.QueryResult(0, true, Collections.emptyList());
+
+        when(webClient.get()).thenReturn(requestHeadersUriSpec);
+        when(requestHeadersUriSpec.uri(any(java.util.function.Function.class))).thenReturn(requestHeadersSpec);
+        when(requestHeadersSpec.header(anyString(), anyString())).thenReturn(requestHeadersSpec);
+        when(requestHeadersSpec.retrieve()).thenReturn(responseSpec);
+        when(responseSpec.bodyToMono(TipoDocumentoResponse.QueryResult.class)).thenReturn(Mono.just(queryResult));
+
+        TipoDocumentoResponse result = salesforceClient.queryTipoDocumentoById("999");
+
+        assertThat(result).isNull();
+    }
+
+    @Test
+    @DisplayName("Should throw exception from fallbackQueryTipoDocumentoById")
+    void shouldThrowExceptionFromFallbackQueryTipoDocumentoById() throws Exception {
+        Method fallbackMethod = SalesforceClient.class.getDeclaredMethod("fallbackQueryTipoDocumentoById", String.class, Exception.class);
+        fallbackMethod.setAccessible(true);
+
+        RuntimeException cause = new RuntimeException("Original error");
+
+        try {
+            fallbackMethod.invoke(salesforceClient, "123", cause);
+        } catch (Exception e) {
+            assertThat(e.getCause()).isInstanceOf(SalesforceIntegrationException.class);
+            assertThat(e.getCause().getMessage()).contains("temporarily unavailable");
+        }
+    }
+
+    @Test
+    @DisplayName("Should throw exception from fallbackQueryTipoDocumentoByPais")
+    void shouldThrowExceptionFromFallbackQueryTipoDocumentoByPais() throws Exception {
+        Method fallbackMethod = SalesforceClient.class.getDeclaredMethod("fallbackQueryTipoDocumentoByPais", String.class, Exception.class);
+        fallbackMethod.setAccessible(true);
+
+        RuntimeException cause = new RuntimeException("Original error");
+
+        try {
+            fallbackMethod.invoke(salesforceClient, "PE", cause);
+        } catch (Exception e) {
+            assertThat(e.getCause()).isInstanceOf(SalesforceIntegrationException.class);
+            assertThat(e.getCause().getMessage()).contains("temporarily unavailable");
+        }
+    }
+
+    @Test
+    @DisplayName("Should query detalles documento by configuracion successfully")
+    void shouldQueryDetallesDocumentoByConfiguracionSuccessfully() {
+        setupAuth();
+
+        DetallesDocumentoResponse detallesResponse = DetallesDocumentoResponse.builder()
+                .id("123")
+                .name("Detalle 001")
+                .configuracionDeImpresion("CONFIG123")
+                .build();
+
+        DetallesDocumentoResponse.QueryResult queryResult = new DetallesDocumentoResponse.QueryResult(1, true, List.of(detallesResponse));
+
+        when(webClient.get()).thenReturn(requestHeadersUriSpec);
+        when(requestHeadersUriSpec.uri(any(java.util.function.Function.class))).thenReturn(requestHeadersSpec);
+        when(requestHeadersSpec.header(anyString(), anyString())).thenReturn(requestHeadersSpec);
+        when(requestHeadersSpec.retrieve()).thenReturn(responseSpec);
+        when(responseSpec.bodyToMono(DetallesDocumentoResponse.QueryResult.class)).thenReturn(Mono.just(queryResult));
+
+        List<DetallesDocumentoResponse> results = salesforceClient.queryDetallesDocumentoByConfiguracion("CONFIG123");
+
+        assertThat(results).isNotNull();
+        assertThat(results).hasSize(1);
+        assertThat(results.get(0).getId()).isEqualTo("123");
+        verify(webClient).get();
+    }
+
+    @Test
+    @DisplayName("Should query detalles documento by id successfully")
+    void shouldQueryDetallesDocumentoByIdSuccessfully() {
+        setupAuth();
+
+        DetallesDocumentoResponse detallesResponse = DetallesDocumentoResponse.builder()
+                .id("123")
+                .name("Detalle 001")
+                .build();
+
+        DetallesDocumentoResponse.QueryResult queryResult = new DetallesDocumentoResponse.QueryResult(1, true, List.of(detallesResponse));
+
+        when(webClient.get()).thenReturn(requestHeadersUriSpec);
+        when(requestHeadersUriSpec.uri(any(java.util.function.Function.class))).thenReturn(requestHeadersSpec);
+        when(requestHeadersSpec.header(anyString(), anyString())).thenReturn(requestHeadersSpec);
+        when(requestHeadersSpec.retrieve()).thenReturn(responseSpec);
+        when(responseSpec.bodyToMono(DetallesDocumentoResponse.QueryResult.class)).thenReturn(Mono.just(queryResult));
+
+        DetallesDocumentoResponse result = salesforceClient.queryDetallesDocumentoById("123");
+
+        assertThat(result).isNotNull();
+        assertThat(result.getId()).isEqualTo("123");
+        verify(webClient).get();
+    }
+
+    @Test
+    @DisplayName("Should return null when no detalles documento found by id")
+    void shouldReturnNullWhenNoDetallesDocumentoFoundById() {
+        setupAuth();
+
+        DetallesDocumentoResponse.QueryResult queryResult = new DetallesDocumentoResponse.QueryResult(0, true, Collections.emptyList());
+
+        when(webClient.get()).thenReturn(requestHeadersUriSpec);
+        when(requestHeadersUriSpec.uri(any(java.util.function.Function.class))).thenReturn(requestHeadersSpec);
+        when(requestHeadersSpec.header(anyString(), anyString())).thenReturn(requestHeadersSpec);
+        when(requestHeadersSpec.retrieve()).thenReturn(responseSpec);
+        when(responseSpec.bodyToMono(DetallesDocumentoResponse.QueryResult.class)).thenReturn(Mono.just(queryResult));
+
+        DetallesDocumentoResponse result = salesforceClient.queryDetallesDocumentoById("999");
+
+        assertThat(result).isNull();
+    }
+
+    @Test
+    @DisplayName("Should throw exception from fallbackQueryDetallesDocumentoById")
+    void shouldThrowExceptionFromFallbackQueryDetallesDocumentoById() throws Exception {
+        Method fallbackMethod = SalesforceClient.class.getDeclaredMethod("fallbackQueryDetallesDocumentoById", String.class, Exception.class);
+        fallbackMethod.setAccessible(true);
+
+        RuntimeException cause = new RuntimeException("Original error");
+
+        try {
+            fallbackMethod.invoke(salesforceClient, "123", cause);
+        } catch (Exception e) {
+            assertThat(e.getCause()).isInstanceOf(SalesforceIntegrationException.class);
+            assertThat(e.getCause().getMessage()).contains("temporarily unavailable");
+        }
+    }
+
+    @Test
+    @DisplayName("Should throw exception from fallbackQueryDetallesDocumentoByConfiguracion")
+    void shouldThrowExceptionFromFallbackQueryDetallesDocumentoByConfiguracion() throws Exception {
+        Method fallbackMethod = SalesforceClient.class.getDeclaredMethod("fallbackQueryDetallesDocumentoByConfiguracion", String.class, Exception.class);
+        fallbackMethod.setAccessible(true);
+
+        RuntimeException cause = new RuntimeException("Original error");
+
+        try {
+            fallbackMethod.invoke(salesforceClient, "CONFIG123", cause);
+        } catch (Exception e) {
+            assertThat(e.getCause()).isInstanceOf(SalesforceIntegrationException.class);
+            assertThat(e.getCause().getMessage()).contains("temporarily unavailable");
+        }
     }
 }

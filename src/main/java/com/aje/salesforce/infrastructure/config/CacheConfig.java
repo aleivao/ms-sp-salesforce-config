@@ -15,7 +15,7 @@ public class CacheConfig {
     
     @Bean
     public CacheManager cacheManager() {
-        CaffeineCacheManager cacheManager = new CaffeineCacheManager("companiasByPais", "companiaById", "sucursalById", "sucursalesByPais");
+        CaffeineCacheManager cacheManager = new CaffeineCacheManager("companiasByPais", "companiaById", "sucursalById", "sucursalesByPais", "configuracionImpresionById", "configuracionesImpresionByPais", "tipoDocumentoById", "tiposDocumentoByPais", "detallesDocumentoById", "detallesDocumentoByConfiguracion");
         
         cacheManager.setCaffeine(Caffeine.newBuilder()
             .expireAfterWrite(5, TimeUnit.MINUTES)

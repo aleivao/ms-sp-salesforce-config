@@ -1,7 +1,11 @@
 package com.aje.salesforce.infrastructure.adapter.in.rest;
 
 import com.aje.salesforce.domain.exception.CompaniaNotFoundException;
+import com.aje.salesforce.domain.exception.ConfiguracionImpresionNotFoundException;
+import com.aje.salesforce.domain.exception.DetallesDocumentoNotFoundException;
 import com.aje.salesforce.domain.exception.SalesforceIntegrationException;
+import com.aje.salesforce.domain.exception.SucursalNotFoundException;
+import com.aje.salesforce.domain.exception.TipoDocumentoNotFoundException;
 import com.aje.salesforce.infrastructure.adapter.in.rest.dto.ErrorResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.BeforeEach;
@@ -159,5 +163,77 @@ class GlobalExceptionHandlerTest {
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
         assertThat(response.getBody()).isNotNull();
         assertThat(response.getBody().getValidationErrors()).hasSize(2);
+    }
+
+    @Test
+    @DisplayName("Should handle SucursalNotFoundException")
+    void shouldHandleSucursalNotFoundException() {
+        // Given
+        SucursalNotFoundException exception = new SucursalNotFoundException("SUC123");
+
+        // When
+        ResponseEntity<ErrorResponse> response = exceptionHandler.handleSucursalNotFoundException(exception, request);
+
+        // Then
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+        assertThat(response.getBody()).isNotNull();
+        assertThat(response.getBody().getStatus()).isEqualTo(404);
+        assertThat(response.getBody().getError()).isEqualTo("Not Found");
+        assertThat(response.getBody().getMessage()).contains("SUC123");
+        assertThat(response.getBody().getPath()).isEqualTo("/api/v1/companias/123");
+    }
+
+    @Test
+    @DisplayName("Should handle ConfiguracionImpresionNotFoundException")
+    void shouldHandleConfiguracionImpresionNotFoundException() {
+        // Given
+        ConfiguracionImpresionNotFoundException exception = new ConfiguracionImpresionNotFoundException("CONFIG123");
+
+        // When
+        ResponseEntity<ErrorResponse> response = exceptionHandler.handleConfiguracionImpresionNotFoundException(exception, request);
+
+        // Then
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+        assertThat(response.getBody()).isNotNull();
+        assertThat(response.getBody().getStatus()).isEqualTo(404);
+        assertThat(response.getBody().getError()).isEqualTo("Not Found");
+        assertThat(response.getBody().getMessage()).contains("CONFIG123");
+        assertThat(response.getBody().getPath()).isEqualTo("/api/v1/companias/123");
+    }
+
+    @Test
+    @DisplayName("Should handle TipoDocumentoNotFoundException")
+    void shouldHandleTipoDocumentoNotFoundException() {
+        // Given
+        TipoDocumentoNotFoundException exception = new TipoDocumentoNotFoundException("TIPO123");
+
+        // When
+        ResponseEntity<ErrorResponse> response = exceptionHandler.handleTipoDocumentoNotFoundException(exception, request);
+
+        // Then
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+        assertThat(response.getBody()).isNotNull();
+        assertThat(response.getBody().getStatus()).isEqualTo(404);
+        assertThat(response.getBody().getError()).isEqualTo("Not Found");
+        assertThat(response.getBody().getMessage()).contains("TIPO123");
+        assertThat(response.getBody().getPath()).isEqualTo("/api/v1/companias/123");
+    }
+
+    @Test
+    @DisplayName("Should handle DetallesDocumentoNotFoundException")
+    void shouldHandleDetallesDocumentoNotFoundException() {
+        // Given
+        DetallesDocumentoNotFoundException exception = new DetallesDocumentoNotFoundException("DETALLES123");
+
+        // When
+        ResponseEntity<ErrorResponse> response = exceptionHandler.handleDetallesDocumentoNotFoundException(exception, request);
+
+        // Then
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+        assertThat(response.getBody()).isNotNull();
+        assertThat(response.getBody().getStatus()).isEqualTo(404);
+        assertThat(response.getBody().getError()).isEqualTo("Not Found");
+        assertThat(response.getBody().getMessage()).contains("DETALLES123");
+        assertThat(response.getBody().getPath()).isEqualTo("/api/v1/companias/123");
     }
 }

@@ -14,6 +14,9 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDateTime;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -42,7 +45,7 @@ class SucursalSalesforceAdapterTest {
                 .name("Sucursal Lima Norte")
                 .codigo("SUC001")
                 .estado("Activo")
-                .pais("Peru")
+                .pais("PE")
                 .isDeleted(false)
                 .build();
 
@@ -51,7 +54,7 @@ class SucursalSalesforceAdapterTest {
                 .name("Sucursal Lima Norte")
                 .codigo("SUC001")
                 .estado("Activo")
-                .pais("Peru")
+                .pais("PE")
                 .isDeleted(false)
                 .createdDate(LocalDateTime.now())
                 .build();
@@ -83,5 +86,36 @@ class SucursalSalesforceAdapterTest {
 
         verify(salesforceClient, times(1)).querySucursalById("invalid-id");
         verify(mapper, never()).toDomain(any());
+    }
+
+    @Test
+    @DisplayName("Should return sucursales when found by country")
+    void shouldReturnSucursalesWhenFoundByCountry() {
+        List<SucursalResponse> responses = Arrays.asList(testResponse);
+        List<Sucursal> sucursales = Arrays.asList(testSucursal);
+
+        when(salesforceClient.querySucursalByPais("PE")).thenReturn(responses);
+        when(mapper.toDomainList(responses)).thenReturn(sucursales);
+
+        List<Sucursal> result = adapter.findByPais("PE");
+
+        assertThat(result).isNotNull();
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).getPais()).isEqualTo("PE");
+        verify(salesforceClient, times(1)).querySucursalByPais("PE");
+        verify(mapper, times(1)).toDomainList(responses);
+    }
+
+    @Test
+    @DisplayName("Should return empty list when no sucursales found by country")
+    void shouldReturnEmptyListWhenNoSucursalesFoundByCountry() {
+        when(salesforceClient.querySucursalByPais("XX")).thenReturn(Collections.emptyList());
+        when(mapper.toDomainList(Collections.emptyList())).thenReturn(Collections.emptyList());
+
+        List<Sucursal> result = adapter.findByPais("XX");
+
+        assertThat(result).isNotNull();
+        assertThat(result).isEmpty();
+        verify(salesforceClient, times(1)).querySucursalByPais("XX");
     }
 }

@@ -12,6 +12,9 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDateTime;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -36,7 +39,7 @@ class SucursalServiceTest {
                 .name("Sucursal Lima Norte")
                 .codigo("SUC001")
                 .estado("Activo")
-                .pais("Peru")
+                .pais("PE")
                 .isDeleted(false)
                 .createdDate(LocalDateTime.now())
                 .build();
@@ -66,5 +69,31 @@ class SucursalServiceTest {
             .hasMessageContaining("invalid-id");
 
         verify(sucursalSalesforcePort, times(1)).findById("invalid-id");
+    }
+
+    @Test
+    @DisplayName("Should return sucursales when found by country")
+    void shouldReturnSucursalesWhenFoundByCountry() {
+        List<Sucursal> sucursales = Arrays.asList(testSucursal);
+        when(sucursalSalesforcePort.findByPais("PE")).thenReturn(sucursales);
+
+        List<Sucursal> result = sucursalService.getByPais("PE");
+
+        assertThat(result).isNotNull();
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).getPais()).isEqualTo("PE");
+        verify(sucursalSalesforcePort, times(1)).findByPais("PE");
+    }
+
+    @Test
+    @DisplayName("Should return empty list when no sucursales found by country")
+    void shouldReturnEmptyListWhenNoSucursalesFoundByCountry() {
+        when(sucursalSalesforcePort.findByPais("XX")).thenReturn(Collections.emptyList());
+
+        List<Sucursal> result = sucursalService.getByPais("XX");
+
+        assertThat(result).isNotNull();
+        assertThat(result).isEmpty();
+        verify(sucursalSalesforcePort, times(1)).findByPais("XX");
     }
 }
