@@ -60,3 +60,15 @@ variable "salesforce_credentials" {
   })
   sensitive = true
 }
+
+variable "database_credentials" {
+  description = "PostgreSQL database credentials"
+  type = object({
+    host     = string
+    port     = number
+    name     = string
+    username = string
+    password = string
+  })
+  sensitive = true
+}

@@ -58,6 +58,7 @@ module "ecs" {
   private_subnet_ids     = var.app_subnet_ids
   ecr_repository_url     = module.ecr.repository_url
   salesforce_credentials = var.salesforce_credentials
+  database_credentials   = var.database_credentials
   container_cpu          = var.container_cpu
   container_memory       = var.container_memory
   desired_count          = var.desired_count

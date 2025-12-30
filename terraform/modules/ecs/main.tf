@@ -41,7 +41,12 @@ resource "aws_ecs_task_definition" "main" {
       { name = "SALESFORCE_PASSWORD", valueFrom = "${aws_secretsmanager_secret.salesforce.arn}:password::" },
       { name = "SALESFORCE_CLIENT_ID", valueFrom = "${aws_secretsmanager_secret.salesforce.arn}:client_id::" },
       { name = "SALESFORCE_CLIENT_SECRET", valueFrom = "${aws_secretsmanager_secret.salesforce.arn}:client_secret::" },
-      { name = "API_KEY", valueFrom = "${aws_secretsmanager_secret.salesforce.arn}:api_key::" }
+      { name = "API_KEY", valueFrom = "${aws_secretsmanager_secret.salesforce.arn}:api_key::" },
+      { name = "DB_HOST", valueFrom = "${aws_secretsmanager_secret.database.arn}:host::" },
+      { name = "DB_PORT", valueFrom = "${aws_secretsmanager_secret.database.arn}:port::" },
+      { name = "DB_NAME", valueFrom = "${aws_secretsmanager_secret.database.arn}:name::" },
+      { name = "DB_USERNAME", valueFrom = "${aws_secretsmanager_secret.database.arn}:username::" },
+      { name = "DB_PASSWORD", valueFrom = "${aws_secretsmanager_secret.database.arn}:password::" }
     ]
 
     portMappings = [{
