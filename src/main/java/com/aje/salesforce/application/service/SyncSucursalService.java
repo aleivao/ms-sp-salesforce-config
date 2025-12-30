@@ -7,6 +7,7 @@ import com.aje.salesforce.domain.model.Sucursal;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 @Slf4j
@@ -16,6 +17,17 @@ public class SyncSucursalService implements SyncSucursalUseCase {
 
     private final SucursalSalesforcePort sucursalSalesforcePort;
     private final SucursalPersistencePort persistencePort;
+
+    @Override
+    public Flux<Sucursal> syncByPais(String pais) {
+        log.info("Starting sync for sucursales in country: {}", pais);
+
+        return Flux.fromIterable(sucursalSalesforcePort.findByPais(pais))
+                .flatMap(persistencePort::save)
+                .doOnNext(sucursal -> log.debug("Synced sucursal: {} ({})", sucursal.getName(), sucursal.getId()))
+                .doOnComplete(() -> log.info("Sync completed for country: {}", pais))
+                .doOnError(error -> log.error("Error syncing sucursales for country {}: {}", pais, error.getMessage()));
+    }
 
     @Override
     public Mono<Sucursal> syncById(String id) {

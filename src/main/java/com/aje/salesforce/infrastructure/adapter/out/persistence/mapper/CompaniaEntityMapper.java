@@ -21,7 +21,6 @@ public interface CompaniaEntityMapper {
     @Mapping(target = "integracionErp", source = "integracionErp", qualifiedByName = "booleanToString")
     @Mapping(target = "impuesto", source = "impuesto", qualifiedByName = "doubleToString")
     @Mapping(target = "lastActivityDate", source = "lastActivityDate", qualifiedByName = "localDateToLocalDateTime")
-    @Mapping(target = "sellin", ignore = true)
     Compania toDomain(CompaniaEntity entity);
 
     @Named("stringToBoolean")

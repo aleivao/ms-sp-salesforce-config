@@ -14,6 +14,9 @@ import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
 import java.time.LocalDateTime;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
@@ -44,6 +47,59 @@ class SyncSucursalServiceTest {
                 .isDeleted(false)
                 .createdDate(LocalDateTime.now())
                 .build();
+    }
+
+    @Test
+    @DisplayName("Should sync sucursales by country")
+    void shouldSyncSucursalesByCountry() {
+        List<Sucursal> sucursales = Arrays.asList(testSucursal);
+        when(sucursalSalesforcePort.findByPais("Peru")).thenReturn(sucursales);
+        when(persistencePort.save(any(Sucursal.class))).thenReturn(Mono.just(testSucursal));
+
+        StepVerifier.create(syncSucursalService.syncByPais("Peru"))
+                .expectNext(testSucursal)
+                .verifyComplete();
+
+        verify(sucursalSalesforcePort, times(1)).findByPais("Peru");
+        verify(persistencePort, times(1)).save(any(Sucursal.class));
+    }
+
+    @Test
+    @DisplayName("Should return empty when no sucursales to sync")
+    void shouldReturnEmptyWhenNoSucursalesToSync() {
+        when(sucursalSalesforcePort.findByPais("Unknown")).thenReturn(Collections.emptyList());
+
+        StepVerifier.create(syncSucursalService.syncByPais("Unknown"))
+                .verifyComplete();
+
+        verify(sucursalSalesforcePort, times(1)).findByPais("Unknown");
+        verify(persistencePort, never()).save(any(Sucursal.class));
+    }
+
+    @Test
+    @DisplayName("Should sync multiple sucursales by country")
+    void shouldSyncMultipleSucursalesByCountry() {
+        Sucursal sucursal2 = Sucursal.builder()
+                .id("a0Y5f000000XyZaBC")
+                .name("Sucursal Lima Sur")
+                .codigo("SUC002")
+                .estado("Activo")
+                .pais("Peru")
+                .isDeleted(false)
+                .build();
+
+        List<Sucursal> sucursales = Arrays.asList(testSucursal, sucursal2);
+        when(sucursalSalesforcePort.findByPais("Peru")).thenReturn(sucursales);
+        when(persistencePort.save(testSucursal)).thenReturn(Mono.just(testSucursal));
+        when(persistencePort.save(sucursal2)).thenReturn(Mono.just(sucursal2));
+
+        StepVerifier.create(syncSucursalService.syncByPais("Peru"))
+                .expectNext(testSucursal)
+                .expectNext(sucursal2)
+                .verifyComplete();
+
+        verify(sucursalSalesforcePort, times(1)).findByPais("Peru");
+        verify(persistencePort, times(2)).save(any(Sucursal.class));
     }
 
     @Test

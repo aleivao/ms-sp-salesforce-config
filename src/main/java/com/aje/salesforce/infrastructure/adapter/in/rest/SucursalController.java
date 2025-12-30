@@ -24,6 +24,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.util.List;
@@ -119,6 +120,42 @@ public class SucursalController {
         log.info("Returning sucursal: {} ({})", sucursal.getName(), sucursal.getId());
 
         return ResponseEntity.ok(sucursal);
+    }
+
+    @Operation(
+        summary = "Sincronizar sucursales por país",
+        description = "Sincroniza las sucursales de un país desde Salesforce a la base de datos local"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = "200",
+            description = "Sincronización completada exitosamente",
+            content = @Content(
+                mediaType = "application/json",
+                array = @ArraySchema(schema = @Schema(implementation = SucursalDto.class))
+            )
+        ),
+        @ApiResponse(
+            responseCode = "400",
+            description = "Parámetro de país inválido"
+        ),
+        @ApiResponse(
+            responseCode = "500",
+            description = "Error interno del servidor"
+        )
+    })
+    @PostMapping("/sync")
+    public Flux<SucursalDto> syncSucursalesByCountry(
+        @Parameter(description = "Nombre del país", required = true, example = "PE")
+        @RequestParam("pais")
+        @NotBlank(message = "El país no puede estar vacío")
+        String pais
+    ) {
+        log.info("POST /api/v1/sucursales/sync - Syncing sucursales for country: {}", pais);
+
+        return syncSucursalUseCase.syncByPais(pais)
+                .map(mapper::toDto)
+                .doOnComplete(() -> log.info("Sync completed for country: {}", pais));
     }
 
     @Operation(

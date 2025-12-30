@@ -106,4 +106,7 @@ public class CompaniaEntity {
 
     @Column("enviar_a_siesa__c")
     private Boolean enviarASiesa;
+
+    @Column("sellin__c")
+    private Boolean sellin;
 }
