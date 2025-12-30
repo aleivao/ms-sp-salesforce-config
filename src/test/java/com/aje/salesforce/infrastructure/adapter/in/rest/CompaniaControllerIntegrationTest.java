@@ -2,6 +2,7 @@ package com.aje.salesforce.infrastructure.adapter.in.rest;
 
 import com.aje.salesforce.application.port.in.GetCompaniaByIdUseCase;
 import com.aje.salesforce.application.port.in.GetCompaniasByPaisUseCase;
+import com.aje.salesforce.application.port.in.SyncCompaniasUseCase;
 import com.aje.salesforce.domain.exception.CompaniaNotFoundException;
 import com.aje.salesforce.domain.model.Compania;
 import com.aje.salesforce.infrastructure.adapter.in.rest.dto.CompaniaDto;
@@ -43,6 +44,9 @@ class CompaniaControllerIntegrationTest {
 
     @MockBean
     private GetCompaniaByIdUseCase getCompaniaByIdUseCase;
+
+    @MockBean
+    private SyncCompaniasUseCase syncCompaniasUseCase;
 
     @MockBean
     private CompaniaDtoMapper mapper;
