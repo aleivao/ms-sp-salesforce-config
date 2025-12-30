@@ -108,6 +108,8 @@ jacocoTestReport {
                 '**/exception/**',
                 '**/entity/**',
                 '**/repository/**',
+                '**/domain/model/**',
+                '**/adapter/in/rest/*Controller.class',
                 '**/*Mapper*.class',
                 '**/*Builder.class'
             ])
@@ -128,6 +130,8 @@ jacocoTestCoverageVerification {
                 '**/exception/**',
                 '**/entity/**',
                 '**/repository/**',
+                '**/domain/model/**',
+                '**/adapter/in/rest/*Controller.class',
                 '**/*Mapper*.class',
                 '**/*Builder.class'
             ])

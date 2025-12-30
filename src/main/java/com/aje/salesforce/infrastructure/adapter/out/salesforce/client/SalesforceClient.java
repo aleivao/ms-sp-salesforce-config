@@ -2,6 +2,7 @@ package com.aje.salesforce.infrastructure.adapter.out.salesforce.client;
 
 import com.aje.salesforce.domain.exception.SalesforceIntegrationException;
 import com.aje.salesforce.infrastructure.adapter.out.salesforce.response.CompaniaResponse;
+import com.aje.salesforce.infrastructure.adapter.out.salesforce.response.SucursalResponse;
 import com.aje.salesforce.infrastructure.config.SalesforceProperties;
 import com.fasterxml.jackson.databind.JsonNode;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
@@ -177,6 +178,80 @@ public class SalesforceClient {
     
     private CompaniaResponse fallbackQueryById(String id, Exception e) {
         log.error("Circuit breaker opened for query by ID. Fallback triggered.", e);
+        throw new SalesforceIntegrationException("Salesforce service temporarily unavailable", e);
+    }
+
+    @CircuitBreaker(name = "salesforce", fallbackMethod = "fallbackQuerySucursalById")
+    @Retry(name = "salesforce")
+    public SucursalResponse querySucursalById(String id) {
+        ensureAuthenticated();
+
+        String soql = String.format(
+            "SELECT Id, IsDeleted, Name, CurrencyIsoCode, " +
+            "CreatedDate, CreatedById, LastModifiedDate, LastModifiedById, " +
+            "SystemModstamp, LastActivityDate, LastViewedDate, LastReferencedDate, " +
+            "Compania__c, Codigo__c, Codigo_de_Compania__c, Codigo_Unico__c, Pais__c, " +
+            "Almacenista__c, Eje_Territorial__c, Habilitar_Extra_Modulo__c, " +
+            "Habilitar_Linea_de_Credito__c, Habilitar_Transferencia_Gratuita__c, " +
+            "Tipo_de_Sucursal__c, Enviar_a_Oracle__c, Almacen__c, " +
+            "Bloques_de_Envio_de_Pedido__c, Enviar_por_Bloques__c, Bloquear_Envio_ERP__c, " +
+            "Limite_Reenvio_Pedidos__c, Minutos_Reeenvio_Pedido_en_Espera__c, " +
+            "Reenvio_Pedidos_en_Espera__c, Minutos_Reenvio_Pedido_Default__c, " +
+            "Facturacion_Punto_de_Venta__c, Estado__c, Enviar_a_Siesa__c " +
+            "FROM Sucursal__c WHERE Id = '%s'",
+            id
+        );
+
+        List<SucursalResponse> results = executeSucursalQuery(soql);
+
+        if (results.isEmpty()) {
+            return null;
+        }
+
+        return results.get(0);
+    }
+
+    private List<SucursalResponse> executeSucursalQuery(String soql) {
+        try {
+            log.debug("Executing SOQL for Sucursal: {}", soql);
+
+            SucursalResponse.QueryResult result = salesforceWebClient
+                .get()
+                .uri(uriBuilder -> uriBuilder
+                    .scheme("https")
+                    .host(instanceUrl.replace("https://", "").replace("http://", ""))
+                    .path("/services/data/v59.0/query")
+                    .queryParam("q", soql)
+                    .build())
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken)
+                .retrieve()
+                .bodyToMono(SucursalResponse.QueryResult.class)
+                .timeout(Duration.ofSeconds(properties.getTimeout()))
+                .block();
+
+            if (result != null && result.getRecords() != null) {
+                log.info("Sucursal query returned {} records", result.getTotalSize());
+                return result.getRecords();
+            }
+
+            return Collections.emptyList();
+
+        } catch (WebClientResponseException e) {
+            if (e.getStatusCode().value() == 401) {
+                log.warn("Access token expired, re-authenticating...");
+                authenticate();
+                return executeSucursalQuery(soql);
+            }
+            log.error("Sucursal query failed with status: {} - {}", e.getStatusCode(), e.getResponseBodyAsString());
+            throw new SalesforceIntegrationException("Failed to execute Salesforce Sucursal query", e);
+        } catch (Exception e) {
+            log.error("Unexpected error during Sucursal query execution", e);
+            throw new SalesforceIntegrationException("Unexpected error during Salesforce Sucursal query", e);
+        }
+    }
+
+    private SucursalResponse fallbackQuerySucursalById(String id, Exception e) {
+        log.error("Circuit breaker opened for Sucursal query by ID. Fallback triggered.", e);
         throw new SalesforceIntegrationException("Salesforce service temporarily unavailable", e);
     }
 }
