@@ -2,6 +2,10 @@ package com.aje.salesforce.infrastructure.adapter.out.salesforce.client;
 
 import com.aje.salesforce.domain.exception.SalesforceIntegrationException;
 import com.aje.salesforce.infrastructure.adapter.out.salesforce.response.CompaniaResponse;
+import com.aje.salesforce.infrastructure.adapter.out.salesforce.response.ConfiguracionImpresionResponse;
+import com.aje.salesforce.infrastructure.adapter.out.salesforce.response.DetallesDocumentoResponse;
+import com.aje.salesforce.infrastructure.adapter.out.salesforce.response.SucursalResponse;
+import com.aje.salesforce.infrastructure.adapter.out.salesforce.response.TipoDocumentoResponse;
 import com.aje.salesforce.infrastructure.config.SalesforceProperties;
 import com.fasterxml.jackson.databind.JsonNode;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
@@ -177,6 +181,380 @@ public class SalesforceClient {
     
     private CompaniaResponse fallbackQueryById(String id, Exception e) {
         log.error("Circuit breaker opened for query by ID. Fallback triggered.", e);
+        throw new SalesforceIntegrationException("Salesforce service temporarily unavailable", e);
+    }
+
+    @CircuitBreaker(name = "salesforce", fallbackMethod = "fallbackQuerySucursalByPais")
+    @Retry(name = "salesforce")
+    public List<SucursalResponse> querySucursalByPais(String pais) {
+        ensureAuthenticated();
+
+        String soql = String.format(
+            "SELECT Id, IsDeleted, Name, CurrencyIsoCode, " +
+            "CreatedDate, CreatedById, LastModifiedDate, LastModifiedById, " +
+            "SystemModstamp, LastActivityDate, LastViewedDate, LastReferencedDate, " +
+            "Compania__c, Codigo__c, Codigo_de_Compania__c, Codigo_Unico__c, Pais__c, " +
+            "Almacenista__c, Eje_Territorial__c, Habilitar_Extra_Modulo__c, " +
+            "Habilitar_Linea_de_Credito__c, Habilitar_Transferencia_Gratuita__c, " +
+            "Tipo_de_Sucursal__c, Enviar_a_Oracle__c, Almacen__c, " +
+            "Bloques_de_Envio_de_Pedido__c, Enviar_por_Bloques__c, Bloquear_Envio_ERP__c, " +
+            "Limite_Reenvio_Pedidos__c, Minutos_Reeenvio_Pedido_en_Espera__c, " +
+            "Reenvio_Pedidos_en_Espera__c, Minutos_Reenvio_Pedido_Default__c, " +
+            "Facturacion_Punto_de_Venta__c, Estado__c, Enviar_a_Siesa__c " +
+            "FROM Sucursal__c WHERE Pais__c = '%s'",
+            pais
+        );
+
+        return executeSucursalQuery(soql);
+    }
+
+    @CircuitBreaker(name = "salesforce", fallbackMethod = "fallbackQuerySucursalById")
+    @Retry(name = "salesforce")
+    public SucursalResponse querySucursalById(String id) {
+        ensureAuthenticated();
+
+        String soql = String.format(
+            "SELECT Id, IsDeleted, Name, CurrencyIsoCode, " +
+            "CreatedDate, CreatedById, LastModifiedDate, LastModifiedById, " +
+            "SystemModstamp, LastActivityDate, LastViewedDate, LastReferencedDate, " +
+            "Compania__c, Codigo__c, Codigo_de_Compania__c, Codigo_Unico__c, Pais__c, " +
+            "Almacenista__c, Eje_Territorial__c, Habilitar_Extra_Modulo__c, " +
+            "Habilitar_Linea_de_Credito__c, Habilitar_Transferencia_Gratuita__c, " +
+            "Tipo_de_Sucursal__c, Enviar_a_Oracle__c, Almacen__c, " +
+            "Bloques_de_Envio_de_Pedido__c, Enviar_por_Bloques__c, Bloquear_Envio_ERP__c, " +
+            "Limite_Reenvio_Pedidos__c, Minutos_Reeenvio_Pedido_en_Espera__c, " +
+            "Reenvio_Pedidos_en_Espera__c, Minutos_Reenvio_Pedido_Default__c, " +
+            "Facturacion_Punto_de_Venta__c, Estado__c, Enviar_a_Siesa__c " +
+            "FROM Sucursal__c WHERE Id = '%s'",
+            id
+        );
+
+        List<SucursalResponse> results = executeSucursalQuery(soql);
+
+        if (results.isEmpty()) {
+            return null;
+        }
+
+        return results.get(0);
+    }
+
+    private List<SucursalResponse> executeSucursalQuery(String soql) {
+        try {
+            log.debug("Executing SOQL for Sucursal: {}", soql);
+
+            SucursalResponse.QueryResult result = salesforceWebClient
+                .get()
+                .uri(uriBuilder -> uriBuilder
+                    .scheme("https")
+                    .host(instanceUrl.replace("https://", "").replace("http://", ""))
+                    .path("/services/data/v59.0/query")
+                    .queryParam("q", soql)
+                    .build())
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken)
+                .retrieve()
+                .bodyToMono(SucursalResponse.QueryResult.class)
+                .timeout(Duration.ofSeconds(properties.getTimeout()))
+                .block();
+
+            if (result != null && result.getRecords() != null) {
+                log.info("Sucursal query returned {} records", result.getTotalSize());
+                return result.getRecords();
+            }
+
+            return Collections.emptyList();
+
+        } catch (WebClientResponseException e) {
+            if (e.getStatusCode().value() == 401) {
+                log.warn("Access token expired, re-authenticating...");
+                authenticate();
+                return executeSucursalQuery(soql);
+            }
+            log.error("Sucursal query failed with status: {} - {}", e.getStatusCode(), e.getResponseBodyAsString());
+            throw new SalesforceIntegrationException("Failed to execute Salesforce Sucursal query", e);
+        } catch (Exception e) {
+            log.error("Unexpected error during Sucursal query execution", e);
+            throw new SalesforceIntegrationException("Unexpected error during Salesforce Sucursal query", e);
+        }
+    }
+
+    private SucursalResponse fallbackQuerySucursalById(String id, Exception e) {
+        log.error("Circuit breaker opened for Sucursal query by ID. Fallback triggered.", e);
+        throw new SalesforceIntegrationException("Salesforce service temporarily unavailable", e);
+    }
+
+    private List<SucursalResponse> fallbackQuerySucursalByPais(String pais, Exception e) {
+        log.error("Circuit breaker opened for Sucursal query by pais. Fallback triggered.", e);
+        throw new SalesforceIntegrationException("Salesforce service temporarily unavailable", e);
+    }
+
+    @CircuitBreaker(name = "salesforce", fallbackMethod = "fallbackQueryConfiguracionImpresionByPais")
+    @Retry(name = "salesforce")
+    public List<ConfiguracionImpresionResponse> queryConfiguracionImpresionByPais(String pais) {
+        ensureAuthenticated();
+
+        String soql = String.format(
+            "SELECT Id, OwnerId, IsDeleted, Name, CurrencyIsoCode, " +
+            "CreatedDate, CreatedById, LastModifiedDate, LastModifiedById, " +
+            "SystemModstamp, LastViewedDate, LastReferencedDate, " +
+            "Compania__c, Imp1__c, Imp2__c, Imp3__c, Imp4__c, " +
+            "Numero_Documento__c, Pais__c, Texto_1__c, Texto_2__c, Texto_3__c, " +
+            "Tipo_Documento__c, Sucursal__c, Documento_Default__c " +
+            "FROM Configuracion_de_impresion__c WHERE Pais__c = '%s'",
+            pais
+        );
+
+        return executeConfiguracionImpresionQuery(soql);
+    }
+
+    @CircuitBreaker(name = "salesforce", fallbackMethod = "fallbackQueryConfiguracionImpresionById")
+    @Retry(name = "salesforce")
+    public ConfiguracionImpresionResponse queryConfiguracionImpresionById(String id) {
+        ensureAuthenticated();
+
+        String soql = String.format(
+            "SELECT Id, OwnerId, IsDeleted, Name, CurrencyIsoCode, " +
+            "CreatedDate, CreatedById, LastModifiedDate, LastModifiedById, " +
+            "SystemModstamp, LastViewedDate, LastReferencedDate, " +
+            "Compania__c, Imp1__c, Imp2__c, Imp3__c, Imp4__c, " +
+            "Numero_Documento__c, Pais__c, Texto_1__c, Texto_2__c, Texto_3__c, " +
+            "Tipo_Documento__c, Sucursal__c, Documento_Default__c " +
+            "FROM Configuracion_de_impresion__c WHERE Id = '%s'",
+            id
+        );
+
+        List<ConfiguracionImpresionResponse> results = executeConfiguracionImpresionQuery(soql);
+
+        if (results.isEmpty()) {
+            return null;
+        }
+
+        return results.get(0);
+    }
+
+    private List<ConfiguracionImpresionResponse> executeConfiguracionImpresionQuery(String soql) {
+        try {
+            log.debug("Executing SOQL for ConfiguracionImpresion: {}", soql);
+
+            ConfiguracionImpresionResponse.QueryResult result = salesforceWebClient
+                .get()
+                .uri(uriBuilder -> uriBuilder
+                    .scheme("https")
+                    .host(instanceUrl.replace("https://", "").replace("http://", ""))
+                    .path("/services/data/v59.0/query")
+                    .queryParam("q", soql)
+                    .build())
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken)
+                .retrieve()
+                .bodyToMono(ConfiguracionImpresionResponse.QueryResult.class)
+                .timeout(Duration.ofSeconds(properties.getTimeout()))
+                .block();
+
+            if (result != null && result.getRecords() != null) {
+                log.info("ConfiguracionImpresion query returned {} records", result.getTotalSize());
+                return result.getRecords();
+            }
+
+            return Collections.emptyList();
+
+        } catch (WebClientResponseException e) {
+            if (e.getStatusCode().value() == 401) {
+                log.warn("Access token expired, re-authenticating...");
+                authenticate();
+                return executeConfiguracionImpresionQuery(soql);
+            }
+            log.error("ConfiguracionImpresion query failed with status: {} - {}", e.getStatusCode(), e.getResponseBodyAsString());
+            throw new SalesforceIntegrationException("Failed to execute Salesforce ConfiguracionImpresion query", e);
+        } catch (Exception e) {
+            log.error("Unexpected error during ConfiguracionImpresion query execution", e);
+            throw new SalesforceIntegrationException("Unexpected error during Salesforce ConfiguracionImpresion query", e);
+        }
+    }
+
+    private ConfiguracionImpresionResponse fallbackQueryConfiguracionImpresionById(String id, Exception e) {
+        log.error("Circuit breaker opened for ConfiguracionImpresion query by ID. Fallback triggered.", e);
+        throw new SalesforceIntegrationException("Salesforce service temporarily unavailable", e);
+    }
+
+    private List<ConfiguracionImpresionResponse> fallbackQueryConfiguracionImpresionByPais(String pais, Exception e) {
+        log.error("Circuit breaker opened for ConfiguracionImpresion query by pais. Fallback triggered.", e);
+        throw new SalesforceIntegrationException("Salesforce service temporarily unavailable", e);
+    }
+
+    @CircuitBreaker(name = "salesforce", fallbackMethod = "fallbackQueryTipoDocumentoByPais")
+    @Retry(name = "salesforce")
+    public List<TipoDocumentoResponse> queryTipoDocumentoByPais(String pais) {
+        ensureAuthenticated();
+
+        String soql = String.format(
+            "SELECT Id, OwnerId, IsDeleted, Name, CurrencyIsoCode, " +
+            "CreatedDate, CreatedById, LastModifiedDate, LastModifiedById, " +
+            "SystemModstamp, LastActivityDate, LastViewedDate, LastReferencedDate, " +
+            "Activo__c, Codigo__c, Documento__c, Expresion_Regular__c, Longitud__c, " +
+            "Pais__c, Tipo_de_Persona__c, Documento_Venta__c, Documento_TXT_EG__c " +
+            "FROM Tipo_de_documento__c WHERE Pais__c = '%s'",
+            pais
+        );
+
+        return executeTipoDocumentoQuery(soql);
+    }
+
+    @CircuitBreaker(name = "salesforce", fallbackMethod = "fallbackQueryTipoDocumentoById")
+    @Retry(name = "salesforce")
+    public TipoDocumentoResponse queryTipoDocumentoById(String id) {
+        ensureAuthenticated();
+
+        String soql = String.format(
+            "SELECT Id, OwnerId, IsDeleted, Name, CurrencyIsoCode, " +
+            "CreatedDate, CreatedById, LastModifiedDate, LastModifiedById, " +
+            "SystemModstamp, LastActivityDate, LastViewedDate, LastReferencedDate, " +
+            "Activo__c, Codigo__c, Documento__c, Expresion_Regular__c, Longitud__c, " +
+            "Pais__c, Tipo_de_Persona__c, Documento_Venta__c, Documento_TXT_EG__c " +
+            "FROM Tipo_de_documento__c WHERE Id = '%s'",
+            id
+        );
+
+        List<TipoDocumentoResponse> results = executeTipoDocumentoQuery(soql);
+
+        if (results.isEmpty()) {
+            return null;
+        }
+
+        return results.get(0);
+    }
+
+    private List<TipoDocumentoResponse> executeTipoDocumentoQuery(String soql) {
+        try {
+            log.debug("Executing SOQL for TipoDocumento: {}", soql);
+
+            TipoDocumentoResponse.QueryResult result = salesforceWebClient
+                .get()
+                .uri(uriBuilder -> uriBuilder
+                    .scheme("https")
+                    .host(instanceUrl.replace("https://", "").replace("http://", ""))
+                    .path("/services/data/v59.0/query")
+                    .queryParam("q", soql)
+                    .build())
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken)
+                .retrieve()
+                .bodyToMono(TipoDocumentoResponse.QueryResult.class)
+                .timeout(Duration.ofSeconds(properties.getTimeout()))
+                .block();
+
+            if (result != null && result.getRecords() != null) {
+                log.info("TipoDocumento query returned {} records", result.getTotalSize());
+                return result.getRecords();
+            }
+
+            return Collections.emptyList();
+
+        } catch (WebClientResponseException e) {
+            if (e.getStatusCode().value() == 401) {
+                log.warn("Access token expired, re-authenticating...");
+                authenticate();
+                return executeTipoDocumentoQuery(soql);
+            }
+            log.error("TipoDocumento query failed with status: {} - {}", e.getStatusCode(), e.getResponseBodyAsString());
+            throw new SalesforceIntegrationException("Failed to execute Salesforce TipoDocumento query", e);
+        } catch (Exception e) {
+            log.error("Unexpected error during TipoDocumento query execution", e);
+            throw new SalesforceIntegrationException("Unexpected error during Salesforce TipoDocumento query", e);
+        }
+    }
+
+    private TipoDocumentoResponse fallbackQueryTipoDocumentoById(String id, Exception e) {
+        log.error("Circuit breaker opened for TipoDocumento query by ID. Fallback triggered.", e);
+        throw new SalesforceIntegrationException("Salesforce service temporarily unavailable", e);
+    }
+
+    private List<TipoDocumentoResponse> fallbackQueryTipoDocumentoByPais(String pais, Exception e) {
+        log.error("Circuit breaker opened for TipoDocumento query by pais. Fallback triggered.", e);
+        throw new SalesforceIntegrationException("Salesforce service temporarily unavailable", e);
+    }
+
+    @CircuitBreaker(name = "salesforce", fallbackMethod = "fallbackQueryDetallesDocumentoByConfiguracion")
+    @Retry(name = "salesforce")
+    public List<DetallesDocumentoResponse> queryDetallesDocumentoByConfiguracion(String configuracionImpresionId) {
+        ensureAuthenticated();
+
+        String soql = String.format(
+            "SELECT Id, IsDeleted, Name, CurrencyIsoCode, " +
+            "CreatedDate, CreatedById, LastModifiedDate, LastModifiedById, " +
+            "SystemModstamp, Configuracion_de_impresion__c, Documento_de_venta__c, Texto_1__c " +
+            "FROM Detalles_documento__c WHERE Configuracion_de_impresion__c = '%s'",
+            configuracionImpresionId
+        );
+
+        return executeDetallesDocumentoQuery(soql);
+    }
+
+    @CircuitBreaker(name = "salesforce", fallbackMethod = "fallbackQueryDetallesDocumentoById")
+    @Retry(name = "salesforce")
+    public DetallesDocumentoResponse queryDetallesDocumentoById(String id) {
+        ensureAuthenticated();
+
+        String soql = String.format(
+            "SELECT Id, IsDeleted, Name, CurrencyIsoCode, " +
+            "CreatedDate, CreatedById, LastModifiedDate, LastModifiedById, " +
+            "SystemModstamp, Configuracion_de_impresion__c, Documento_de_venta__c, Texto_1__c " +
+            "FROM Detalles_documento__c WHERE Id = '%s'",
+            id
+        );
+
+        List<DetallesDocumentoResponse> results = executeDetallesDocumentoQuery(soql);
+
+        if (results.isEmpty()) {
+            return null;
+        }
+
+        return results.get(0);
+    }
+
+    private List<DetallesDocumentoResponse> executeDetallesDocumentoQuery(String soql) {
+        try {
+            log.debug("Executing SOQL for DetallesDocumento: {}", soql);
+
+            DetallesDocumentoResponse.QueryResult result = salesforceWebClient
+                .get()
+                .uri(uriBuilder -> uriBuilder
+                    .scheme("https")
+                    .host(instanceUrl.replace("https://", "").replace("http://", ""))
+                    .path("/services/data/v59.0/query")
+                    .queryParam("q", soql)
+                    .build())
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken)
+                .retrieve()
+                .bodyToMono(DetallesDocumentoResponse.QueryResult.class)
+                .timeout(Duration.ofSeconds(properties.getTimeout()))
+                .block();
+
+            if (result != null && result.getRecords() != null) {
+                log.info("DetallesDocumento query returned {} records", result.getTotalSize());
+                return result.getRecords();
+            }
+
+            return Collections.emptyList();
+
+        } catch (WebClientResponseException e) {
+            if (e.getStatusCode().value() == 401) {
+                log.warn("Access token expired, re-authenticating...");
+                authenticate();
+                return executeDetallesDocumentoQuery(soql);
+            }
+            log.error("DetallesDocumento query failed with status: {} - {}", e.getStatusCode(), e.getResponseBodyAsString());
+            throw new SalesforceIntegrationException("Failed to execute Salesforce DetallesDocumento query", e);
+        } catch (Exception e) {
+            log.error("Unexpected error during DetallesDocumento query execution", e);
+            throw new SalesforceIntegrationException("Unexpected error during Salesforce DetallesDocumento query", e);
+        }
+    }
+
+    private DetallesDocumentoResponse fallbackQueryDetallesDocumentoById(String id, Exception e) {
+        log.error("Circuit breaker opened for DetallesDocumento query by ID. Fallback triggered.", e);
+        throw new SalesforceIntegrationException("Salesforce service temporarily unavailable", e);
+    }
+
+    private List<DetallesDocumentoResponse> fallbackQueryDetallesDocumentoByConfiguracion(String configuracionImpresionId, Exception e) {
+        log.error("Circuit breaker opened for DetallesDocumento query by configuracion. Fallback triggered.", e);
         throw new SalesforceIntegrationException("Salesforce service temporarily unavailable", e);
     }
 }

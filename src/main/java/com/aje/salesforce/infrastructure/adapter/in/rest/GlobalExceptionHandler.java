@@ -1,7 +1,11 @@
 package com.aje.salesforce.infrastructure.adapter.in.rest;
 
 import com.aje.salesforce.domain.exception.CompaniaNotFoundException;
+import com.aje.salesforce.domain.exception.ConfiguracionImpresionNotFoundException;
+import com.aje.salesforce.domain.exception.DetallesDocumentoNotFoundException;
 import com.aje.salesforce.domain.exception.SalesforceIntegrationException;
+import com.aje.salesforce.domain.exception.SucursalNotFoundException;
+import com.aje.salesforce.domain.exception.TipoDocumentoNotFoundException;
 import com.aje.salesforce.infrastructure.adapter.in.rest.dto.ErrorResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
@@ -38,7 +42,79 @@ public class GlobalExceptionHandler {
         
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
     }
-    
+
+    @ExceptionHandler(SucursalNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleSucursalNotFoundException(
+        SucursalNotFoundException ex,
+        HttpServletRequest request
+    ) {
+        log.error("Sucursal no encontrada: {}", ex.getMessage());
+
+        ErrorResponse error = ErrorResponse.builder()
+            .timestamp(LocalDateTime.now())
+            .status(HttpStatus.NOT_FOUND.value())
+            .error(HttpStatus.NOT_FOUND.getReasonPhrase())
+            .message(ex.getMessage())
+            .path(request.getRequestURI())
+            .build();
+
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+    }
+
+    @ExceptionHandler(ConfiguracionImpresionNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleConfiguracionImpresionNotFoundException(
+        ConfiguracionImpresionNotFoundException ex,
+        HttpServletRequest request
+    ) {
+        log.error("Configuracion de impresion no encontrada: {}", ex.getMessage());
+
+        ErrorResponse error = ErrorResponse.builder()
+            .timestamp(LocalDateTime.now())
+            .status(HttpStatus.NOT_FOUND.value())
+            .error(HttpStatus.NOT_FOUND.getReasonPhrase())
+            .message(ex.getMessage())
+            .path(request.getRequestURI())
+            .build();
+
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+    }
+
+    @ExceptionHandler(TipoDocumentoNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleTipoDocumentoNotFoundException(
+        TipoDocumentoNotFoundException ex,
+        HttpServletRequest request
+    ) {
+        log.error("Tipo de documento no encontrado: {}", ex.getMessage());
+
+        ErrorResponse error = ErrorResponse.builder()
+            .timestamp(LocalDateTime.now())
+            .status(HttpStatus.NOT_FOUND.value())
+            .error(HttpStatus.NOT_FOUND.getReasonPhrase())
+            .message(ex.getMessage())
+            .path(request.getRequestURI())
+            .build();
+
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+    }
+
+    @ExceptionHandler(DetallesDocumentoNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleDetallesDocumentoNotFoundException(
+        DetallesDocumentoNotFoundException ex,
+        HttpServletRequest request
+    ) {
+        log.error("Detalles de documento no encontrado: {}", ex.getMessage());
+
+        ErrorResponse error = ErrorResponse.builder()
+            .timestamp(LocalDateTime.now())
+            .status(HttpStatus.NOT_FOUND.value())
+            .error(HttpStatus.NOT_FOUND.getReasonPhrase())
+            .message(ex.getMessage())
+            .path(request.getRequestURI())
+            .build();
+
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+    }
+
     @ExceptionHandler(SalesforceIntegrationException.class)
     public ResponseEntity<ErrorResponse> handleSalesforceIntegrationException(
         SalesforceIntegrationException ex,

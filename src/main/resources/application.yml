@@ -12,6 +12,15 @@ spring:
     time-zone: UTC
     default-property-inclusion: non_null
 
+  r2dbc:
+    url: r2dbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:db_aini}
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:}
+    pool:
+      initial-size: 5
+      max-size: 20
+      max-idle-time: 30m
+
 security:
   api-key:
     header-name: X-API-Key
