@@ -1,11 +1,13 @@
 package com.aje.salesforce.infrastructure.adapter.in.rest;
 
 import com.aje.salesforce.application.port.in.GetSucursalByIdUseCase;
+import com.aje.salesforce.application.port.in.GetSucursalesByPaisUseCase;
 import com.aje.salesforce.application.port.in.SyncSucursalUseCase;
 import com.aje.salesforce.infrastructure.adapter.in.rest.dto.SucursalDto;
 import com.aje.salesforce.infrastructure.adapter.in.rest.mapper.SucursalDtoMapper;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -20,8 +22,11 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Mono;
+
+import java.util.List;
 
 @Slf4j
 @Validated
@@ -32,8 +37,49 @@ import reactor.core.publisher.Mono;
 public class SucursalController {
 
     private final GetSucursalByIdUseCase getSucursalByIdUseCase;
+    private final GetSucursalesByPaisUseCase getSucursalesByPaisUseCase;
     private final SyncSucursalUseCase syncSucursalUseCase;
     private final SucursalDtoMapper mapper;
+
+    @Operation(
+        summary = "Listar sucursales por país",
+        description = "Obtiene todas las sucursales de un país específico desde Salesforce"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = "200",
+            description = "Lista de sucursales obtenida exitosamente",
+            content = @Content(
+                mediaType = "application/json",
+                array = @ArraySchema(schema = @Schema(implementation = SucursalDto.class))
+            )
+        ),
+        @ApiResponse(
+            responseCode = "400",
+            description = "Parámetro de país inválido"
+        ),
+        @ApiResponse(
+            responseCode = "500",
+            description = "Error interno del servidor"
+        )
+    })
+    @GetMapping
+    public ResponseEntity<List<SucursalDto>> getSucursalesByCountry(
+        @Parameter(description = "Nombre del país", required = true, example = "PE")
+        @RequestParam("pais")
+        @NotBlank(message = "El país no puede estar vacío")
+        String pais
+    ) {
+        log.info("GET /api/v1/sucursales - Fetching sucursales for country: {}", pais);
+
+        List<SucursalDto> sucursales = mapper.toDtoList(
+            getSucursalesByPaisUseCase.getByPais(pais)
+        );
+
+        log.info("Returning {} sucursales for country: {}", sucursales.size(), pais);
+
+        return ResponseEntity.ok(sucursales);
+    }
 
     @Operation(
         summary = "Obtener sucursal por ID",

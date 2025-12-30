@@ -181,6 +181,30 @@ public class SalesforceClient {
         throw new SalesforceIntegrationException("Salesforce service temporarily unavailable", e);
     }
 
+    @CircuitBreaker(name = "salesforce", fallbackMethod = "fallbackQuerySucursalByPais")
+    @Retry(name = "salesforce")
+    public List<SucursalResponse> querySucursalByPais(String pais) {
+        ensureAuthenticated();
+
+        String soql = String.format(
+            "SELECT Id, IsDeleted, Name, CurrencyIsoCode, " +
+            "CreatedDate, CreatedById, LastModifiedDate, LastModifiedById, " +
+            "SystemModstamp, LastActivityDate, LastViewedDate, LastReferencedDate, " +
+            "Compania__c, Codigo__c, Codigo_de_Compania__c, Codigo_Unico__c, Pais__c, " +
+            "Almacenista__c, Eje_Territorial__c, Habilitar_Extra_Modulo__c, " +
+            "Habilitar_Linea_de_Credito__c, Habilitar_Transferencia_Gratuita__c, " +
+            "Tipo_de_Sucursal__c, Enviar_a_Oracle__c, Almacen__c, " +
+            "Bloques_de_Envio_de_Pedido__c, Enviar_por_Bloques__c, Bloquear_Envio_ERP__c, " +
+            "Limite_Reenvio_Pedidos__c, Minutos_Reeenvio_Pedido_en_Espera__c, " +
+            "Reenvio_Pedidos_en_Espera__c, Minutos_Reenvio_Pedido_Default__c, " +
+            "Facturacion_Punto_de_Venta__c, Estado__c, Enviar_a_Siesa__c " +
+            "FROM Sucursal__c WHERE Pais__c = '%s'",
+            pais
+        );
+
+        return executeSucursalQuery(soql);
+    }
+
     @CircuitBreaker(name = "salesforce", fallbackMethod = "fallbackQuerySucursalById")
     @Retry(name = "salesforce")
     public SucursalResponse querySucursalById(String id) {
@@ -252,6 +276,11 @@ public class SalesforceClient {
 
     private SucursalResponse fallbackQuerySucursalById(String id, Exception e) {
         log.error("Circuit breaker opened for Sucursal query by ID. Fallback triggered.", e);
+        throw new SalesforceIntegrationException("Salesforce service temporarily unavailable", e);
+    }
+
+    private List<SucursalResponse> fallbackQuerySucursalByPais(String pais, Exception e) {
+        log.error("Circuit breaker opened for Sucursal query by pais. Fallback triggered.", e);
         throw new SalesforceIntegrationException("Salesforce service temporarily unavailable", e);
     }
 }
